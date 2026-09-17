@@ -1,0 +1,23 @@
+version: 1
+categories:
+  - name: lut
+    description: Lookup, reference-code, and controlled-value metadata.
+    exact_names: []
+    prefixes: [LUT_, LOOKUP_]
+    schemas: []
+    comment_keywords: [lookup table, reference data, code list]
+    column_keywords: []
+  - name: um
+    description: User, role, permission, and access-management data.
+    exact_names: [UM_USER, UM_ROLE]
+    prefixes: [UM_, USER_, ROLE_]
+    schemas: [um, identity]
+    comment_keywords: [user, role, permission, identity]
+    column_keywords: [username, role_id, permission_id]
+  - name: content
+    description: Content records, sharing, publishing, and content workflows.
+    exact_names: [CONTENT, CONTENT_SHARE]
+    prefixes: [CONTENT_]
+    schemas: [content]
+    comment_keywords: [content, article, publish, share]
+    column_keywords: [content_id, body, published_at]

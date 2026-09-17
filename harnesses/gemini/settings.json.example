@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "sql-context-pack": {
+      "httpUrl": "http://127.0.0.1:8765/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SQLCTX_API_TOKEN}"
+      }
+    }
+  }
+}

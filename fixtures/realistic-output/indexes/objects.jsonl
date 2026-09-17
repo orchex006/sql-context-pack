@@ -1,0 +1,5 @@
+{"category":"content","materialized":true,"object_id":"table:app.CONTENT","object_type":"table","qualified_name":"app.CONTENT"}
+{"category":"content","materialized":true,"object_id":"table:app.CONTENT_SHARE","object_type":"table","qualified_name":"app.CONTENT_SHARE"}
+{"category":"um","materialized":true,"object_id":"table:app.UM_ROLE","object_type":"table","qualified_name":"app.UM_ROLE"}
+{"category":"um","materialized":true,"object_id":"table:app.UM_USER","object_type":"table","qualified_name":"app.UM_USER"}
+{"category":null,"materialized":false,"object_id":"table:app.LEGACY_X","object_type":"table","qualified_name":"app.LEGACY_X"}

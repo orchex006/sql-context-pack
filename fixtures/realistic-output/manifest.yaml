@@ -1,0 +1,42 @@
+output_format_version: "1"
+generator:
+  name: sql-context-pack
+  version: 1.2.0
+export:
+  discovered_object_count: 7
+  fully_analyzed_object_count: 7
+  analysis_failed_object_count: 0
+  materialized_object_count: 6
+  intentionally_excluded_object_count: 1
+sqlfluff:
+  format_scope: final_materialization
+  format_requested: 6
+  formatted: 6
+  parse_failed_preserved: 0
+  format_failed_preserved: 0
+managed_files:
+- {path: catalog.json, size_bytes: 200, sha256: "sha256:a0e21c9428bbfb84fedf9f82e25f3520074a93bc78c7b3df688a99f4ffc33238"}
+- {path: categories.yaml, size_bytes: 27, sha256: "sha256:6f22284532276a58297f47fea683764695c0290a41b134b46013b3d842155bee"}
+- {path: content/category.yaml, size_bytes: 58, sha256: "sha256:5e9476ca533579a1de4a1500a5886f35bc7408bd600f21bb70bb1f039b753360"}
+- {path: content/store_procedures/CONTENT_I.sql, size_bytes: 181, sha256: "sha256:eb928f787fc746db647f08247a2c1f57fbb1f7931ecb318ad043d606fdcfec3a"}
+- {path: content/tables/CONTENT_SHARE.sql, size_bytes: 282, sha256: "sha256:58c937224cb5e6a44257eb708950beee7d6ca7c935c899df4fdd396d29ed3a35"}
+- {path: content/tables/CONTENT.sql, size_bytes: 313, sha256: "sha256:e83c4af275c6ce19fa0ab4c9a70e15ee204c769258c2ad0d7ddd4ea491c3e5ca"}
+- {path: indexes/edges.jsonl, size_bytes: 336, sha256: "sha256:48868ebd1b1348b81fbb56dd64033082186d371848e4776f6d2f514940edb16e"}
+- {path: indexes/graph.json, size_bytes: 203, sha256: "sha256:ed358c76eb65fbf7625cfe170e2472a47a4006022ab9d24ff226fe35828757cf"}
+- {path: indexes/nodes.jsonl, size_bytes: 257, sha256: "sha256:a475206a787c4dafcdbeb65a0634ab6ee5e1f7706460cb46dbfeb2a7407f0cb4"}
+- {path: indexes/objects.jsonl, size_bytes: 640, sha256: "sha256:97b374d2cb1c5a9f71a5e0074608ffb9758a166b00b5062666c8a370767a253a"}
+- {path: indexes/relationships.json, size_bytes: 323, sha256: "sha256:0ef15c3aaa57f62637a7ad455aaa8699295d48a760190df2eff1dbb6506fddb1"}
+- {path: indexes/routine-dependencies.json, size_bytes: 230, sha256: "sha256:4d60f2eb1dbdb3e3ca6ea38ae9a87c6ea9befa0e3c58b4a6143be9b78c2bf561"}
+- {path: indexes/tags.json, size_bytes: 119, sha256: "sha256:77606576deb7233e60b82f8f346a3ae03cbb746efb378ef1c7d6d047e6945aee"}
+- {path: reports/category-preview.json, size_bytes: 53, sha256: "sha256:f8f2f44cb6fdca07ad145151b4815498c9e0175dce5bb8148d347ecd13710fb8"}
+- {path: reports/classification-report.json, size_bytes: 53, sha256: "sha256:27110a2733a9f1cf22e84f126266bc711857e013a2b8c4d15968165f69079cdb"}
+- {path: reports/export-summary.md, size_bytes: 114, sha256: "sha256:959d9343aac1f63d8f46da53dd4b8d72b51d75c79777fca02aa6bd6294853a08"}
+- {path: reports/integrity-report.json, size_bytes: 78, sha256: "sha256:a6b3e2dd69825d2de41adfc67e743f293f9daf3850c042c36dc53ddac1878446"}
+- {path: reports/masking-report.json, size_bytes: 77, sha256: "sha256:5b600f54ba60dc2aac2f12393418288ddf3226b1d5918c862915abfd1be4bed9"}
+- {path: reports/materialization-plan.json, size_bytes: 59, sha256: "sha256:30ef2839c8f918c0ed4cff2d4914c961484f602bb44427d31fe5ed8ff31c57a4"}
+- {path: reports/sqlfluff-report.json, size_bytes: 92, sha256: "sha256:1776206c9b5c0ffd7703610c047e202c40a1b5377f0ba20eb2101b7b80d8dcda"}
+- {path: um/category.yaml, size_bytes: 48, sha256: "sha256:54b18dc241b50bfafe554267559b939f630cf25a7a86b588ce2ecd8f85e0f2de"}
+- {path: um/store_procedures/UM_USER_I.sql, size_bytes: 172, sha256: "sha256:4fefe08221bcf08cb1382a1c69629010077c3d91408f3f3f8ad71b3e25a89c8e"}
+- {path: um/tables/UM_ROLE.sql, size_bytes: 249, sha256: "sha256:2849d1645b9532e683749402771b1e8f2f5ad50795c118b7f9518677ac6ba024"}
+- {path: um/tables/UM_USER.sql, size_bytes: 300, sha256: "sha256:8dd44eeabc84093551dbe859eeb9547784e623c70ef0a733dc799a8340092ae7"}
+- {path: unresolved/classification-requests.yaml, size_bytes: 82, sha256: "sha256:7cd98e2a700333e9a07b51f9d559deebf92fe4073c07be26241412b03b6254eb"}

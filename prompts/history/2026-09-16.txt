@@ -1,0 +1,110 @@
+### [2026-09-16 13:05:12]
+# sql-context-pack 1.3.0 — SQL Server analysis failures (OUTPUT param, @@PROCID, scalar function)
+
+- Status: FACT (reproduced live, 2026-09-16, Asia/Bangkok)
+- Source: investigation in `agmws-license-management-netcore`, session 093878fe
+- Applies to: installed plugin/service `sql-context-pack` **1.3.0**, engine `sqlserver`
+- Upstream repo: `D:\Projects&_ArgiMap\Projects\AgriMapPlatform\skills\sql-context-pack`
+  (repo `pyproject.toml` declares `product-version = 1.5.0`; **1.5.0 has not been retested** — verify first)
+
+## 1. Symptom
+
+`sqlctx_create_catalog` discovers every requested object, then `set_materialization_selection`
+returns `completed_with_warnings` with a non-zero `analysis_failed_object_count`. Failed objects
+are silently absent from both sitemap views and from `get_materialization_plan` — they are not
+reported as excluded, and **no MCP surface names them or gives a reason**.
+
+Observed on a 37-object request: `discovered 37 / fully_analyzed 19 / analysis_failed 18`.
+
+## 2. Minimal reproducers (all verified individually, one object per catalog)
+
+Baseline controls that **pass**:
+
+    CREATE PROCEDURE [agrimap_app].[ZZ_SQLCTX_PROBE_CREATE] @PI_X INT = NULL
+    AS BEGIN SET NOCOUNT ON; SELECT @PI_X AS X; END
+
+Repro A — `OUTPUT` parameter; Repro B — `@@PROCID`; Repro C — any scalar function.
+Each of A, B, C fails alone: `discovered 1 / fully_analyzed 0 / analysis_failed 1`.
+
+## 3. Ruled out by the reporter
+
+objects missing from DB; missing VIEW DEFINITION; WITH ENCRYPTION; CREATE vs CREATE OR ALTER
+declaration form; profile allowed_object_types missing FUNCTION; batch/concurrency effect;
+environment regression.
+
+## 4. Required outcomes
+
+1. A, B and C each analyze and materialize successfully on `sqlserver`.
+2. Parameter direction (`OUTPUT`) is preserved in v2 managed output and in table/routine metadata.
+3. Scalar functions analyze and materialize; `object_types: [function]` stops being
+   advertised-but-broken.
+4. Regression tests covering all three repros.
+5. **Separately**: per-object failure reporting. `get_catalog_status` must expose a `failures[]`
+   list (object id, stage, error code, safe message), or an equivalent MCP/CLI surface.
+
+## 5. Non-goals
+
+- No change to masking, approval gates, write scopes, or routine deployment semantics.
+- Do not "fix" this by making analysis failures silent or by auto-excluding failed objects.
+- No change to the project's SQL Server objects; the legacy procedures are valid T-SQL.
+
+--------------
+
+# Prompt — run this inside the sql-context-pack repo
+
+Diagnose and fix a confirmed SQL Server analysis regression in this repository.
+
+## Do this, in order
+
+1. **Verify current state first.** Reproduce A, B and C against the code on `main` as it stands.
+   If any of them already pass on 1.5.0, say so explicitly and narrow the work to what still fails.
+2. **Find the real failure point.** Instrument or trace the analysis path and report the actual
+   exception and stage for each of A, B and C before changing anything. State whether the three
+   repros share one root cause or are separate defects.
+3. **Fix it**, smallest change that addresses the proven cause. Preserve parameter direction
+   (`OUTPUT`) in v2 managed output and metadata. Scalar functions must analyze and materialize.
+4. **Add regression tests** for A, B and C in the existing test layout under `tests/`.
+5. **Fix the diagnosability gap, as a separate change.** Add a `failures[]` surface (object id,
+   stage, error code, safe message) to the catalog status contract and its MCP/HTTP/CLI
+   projections. Keep it free of credentials, raw SQL bodies and owner absolute paths. Update the
+   generated contract counts and docs accordingly.
+
+## Constraints
+
+- Do not change masking, approval gates, write scopes, or routine deployment semantics.
+- Do not make analysis failures silent, and do not auto-exclude failed objects.
+- Follow this repository's own `AGENTS.md` for changelog, versioning and release rules.
+- Report honestly: if a repro does not reproduce, or a cause stays unproven, say that rather than
+  shipping a speculative fix.
+
+## Deliverables
+
+- Root-cause statement per repro, with the actual error and stage, backed by a run you performed.
+- The fix, with tests.
+- The `failures[]` contract change.
+- A note on whether 1.2.0 -> 1.3.0 introduced this, and what the safe path is for users pinned to
+  1.3.0.
+
+รบกวนตรวจสอบให้ และปรับให้หน่อย
+
+### [2026-09-16 15:30:00]
+ฉันอยากล้าง Commit ใหม่ทั้งหมดออกไปจาก https://github.com/orchex006/sql-context-pack
+
+เพราะมันมี .agrimap-agent folder ไปโผล่บน git ซึ่งเสี่ยงเรื่องความปลอดภัย 
+
+และอยากเพิ่ม AGENTS.md สำหรับการ พัฒนาให้ด้วย โดยจะต้องคุม workflow แตก branch feature/xxx และ hotfix/xxx ให้ด้วย รวมถึง released tags เวอร์ชันใหม่ๆ โดยเวอร์ชันเริ่มต้นนี้จะเป็น 2.1.0 ถือเป็น Version แรก
+และมีการเพิ่ม Update version ผ่าน /sql-context-pack doctor update << รองรับ codex/claude/gemini รองรับการกำหนด version ได้ และจัดการ commit / changelog ทุกรอบที่จัดการ skills 
+
+ตัวอย่างการใช้งานของ gemini อาจจะต้องปรับเป็น agy (antigravity) เพราะ gemini cli กำลังถูก deprecated
+
+และ MCP ปัจจุบันมันเป็น Windows Service จะแก้ให้เป็น Cross-platform ได้ยังไง ฉันยังไม่มี Idea อยากได้ Cross-platform แข็งแรง 1 instance ทุกตัวเรียกมาที่ ตัวนี้หมด ไม่ใช่ 1 harness instance ต่อ mcp 1 instance มันหนักไป
+
+และอยากให้ตรวจสอบเรื่อง query-db หน่อย มันป้องกันคำสั่ง insert/update/delete/truncate/alter/drop ไหม หรืออันตรายทุกอย่างที่อาจเกิดขึ้นกับฐานข้อมูล ถ้าพบช่องโหว่ส่วนนี้อยากให้เคลียร์หน่อย
+
+เรื่องอยากมี AGENTS Knowledge ในการปรับปรุง ซ่อมแซม หรือ ติดตั้งเช่น MCP , SQLFluff ให้เราได้ด้วย
+
+การดึงข้อมูลทำได้ดีกว่านี้ เหมือนตอนนี้มันติด Guardrails บางอย่างทำให้การดึงข้อมูลไม่ครบทุกรายการ 
+
+เรื่องการแปะป้าย หรือ classification table / sp / function ตอนนี้มันยังทำได้ไม่ดี ฉันเข้าใจเลย เป็นเพราะ ชื่อ table มันไม่สื่อมันเลยไม่สามาถ classify ได้ ดังนั้นฉันจึงมีตาราง [DB_METADATA_CONTEXT] เอาไว้ แปะป้ายชัดเจน แต่ agent มันไม่ทำส่วนนี้ให้เองเลยให้การ Update ค่าไม่ว่ามันจะเป็นตารางที่แยกได้ หรือแยกไม่ได้มันควรจะทำการ Update ตารางนี้อย่างน้อย หนึ่งรอบ เพื่อให้ครั้งต่อไปทำงานได้ดียิ่งขึ้นนะ แต่จนตอนนี้ฉันเจอแค่ 3 record
+
+oyjodHs,kp9;k,;jk,yow,jwfhmeg]p

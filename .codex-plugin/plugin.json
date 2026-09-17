@@ -1,0 +1,26 @@
+{
+  "name": "sql-context-pack",
+  "version": "2.1.0",
+  "description": "Build sanitized, classified, AI-ready SQL context bundles through a managed local service.",
+  "author": {
+    "name": "SQL Context Pack contributors"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/orchex006/sql-context-pack",
+  "keywords": ["database", "sql", "mcp", "agent-skill", "sqlfluff"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "SQL Context Pack",
+    "shortDescription": "Build safe AI-ready database context.",
+    "longDescription": "Extract read-only database definitions and masked samples, classify them, and assemble integrity-checked context bundles.",
+    "developerName": "SQL Context Pack contributors",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": [
+      "Build sanitized context from my configured database profile.",
+      "Resume and validate my retained SQL context export.",
+      "Create selected database context under ./sql-context."
+    ]
+  }
+}

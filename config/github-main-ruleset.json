@@ -1,0 +1,28 @@
+{
+  "name": "main-reviewed-changes",
+  "target": "branch",
+  "enforcement": "active",
+  "bypass_actors": [],
+  "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+  "rules": [
+    {"type": "deletion"},
+    {"type": "non_fast_forward"},
+    {"type": "pull_request", "parameters": {
+      "required_approving_review_count": 0,
+      "dismiss_stale_reviews_on_push": true,
+      "require_code_owner_review": false,
+      "require_last_push_approval": false,
+      "required_review_thread_resolution": true
+    }},
+    {"type": "required_status_checks", "parameters": {
+      "strict_required_status_checks_policy": true,
+      "required_status_checks": [
+        {"context": "quality"},
+        {"context": "unit-contract (3.11)"},
+        {"context": "unit-contract (3.13)"},
+        {"context": "integration-e2e"},
+        {"context": "harness-simulators"}
+      ]
+    }}
+  ]
+}

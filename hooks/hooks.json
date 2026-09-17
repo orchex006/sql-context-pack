@@ -1,0 +1,19 @@
+{
+  "description": "Inject safe SQL Context Pack session-profile guidance.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sqlctx session-hook",
+            "commandWindows": "sqlctx session-hook",
+            "timeout": 10,
+            "statusMessage": "Preparing SQL Context Pack session profile"
+          }
+        ]
+      }
+    ]
+  }
+}

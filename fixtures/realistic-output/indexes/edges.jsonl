@@ -1,0 +1,4 @@
+{"source":"table:app.UM_USER","target":"table:app.UM_ROLE","type":"FOREIGN_KEY"}
+{"source":"table:app.CONTENT","target":"table:app.UM_USER","type":"FOREIGN_KEY"}
+{"source":"table:app.CONTENT_SHARE","target":"table:app.CONTENT","type":"FOREIGN_KEY"}
+{"source":"table:app.CONTENT_SHARE","target":"table:app.UM_USER","type":"FOREIGN_KEY"}

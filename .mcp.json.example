@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "sql-context-pack": {
+      "type": "http",
+      "url": "http://127.0.0.1:8765/mcp",
+      "bearer_token_env_var": "SQLCTX_API_TOKEN"
+    }
+  }
+}

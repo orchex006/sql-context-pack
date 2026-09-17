@@ -1,0 +1,168 @@
+### [2026-07-21 10:30:00]
+# AGENTS.md instructions for D:\Projects\46_ArgiMap\AIDBDumpSkill
+
+<INSTRUCTIONS>
+# กฎการทำงานของ AGENTS
+- กฎข้อบังคับเหล่านี้ Agent / Model ต้องปฎิบัติตามอย่างเคร่งครัดให้ถือเป็นเหตุผลของการตัดสินใจสูงสุดในการทำงาน
+1. มีการจัดเก็บ Requirement เป็น Version ต่างๆ เพื่อให้สามารถย้อนกลับไปดู Requirement เก่า และ ผู้ใช้งานต้องการเก็บรวบรวมชุดคำสั่งที่ใช้ในกระบวนการสร้างงานของ Agent ตั้งแต่ 0 ไปจนถึง 100 อยากรู้ว่า Prompt จะต้องเขียนแบบไหนยังไงจนได้งานครบถ้วน ดังนั้น Agent / Model ต้องทำตาม "การอัปเดต Requirement Version" อย่างเคร่งครัด
+2. เมื่อจบการสร้างงาน/ทำงานของ Requirement Version ใดๆ แล้ว Agent / Model ต้องบันทึก Changelog.md เพื่อบันทึกข้อมูลการเปลี่ยนแปลงของระบบ
+
+## การบันทึกชุดคำสั่ง Raw Prompt / Prompt Submit ของผู้ใช้งาน
+1. Agent / Model ต้องบันทึกชุดคำสั่ง Prompt ของผู้ใช้งานทุกรายการที่ผู้ใช้งาน Submit เข้ามา โดยต้องบันทึกเป็น Raw Prompt / Prompt Submit ของผู้ใช้งาน และบันทึกไว้ที่ prompts/history/<yyyy-MM-dd>.txt โดย yyyy-MM-dd คือวันที่ผู้ใช้งาน Submit Prompt เข้ามา
+2. โครงการสร้าง Log ของ Agentใช้เทมเพลตแบบนี้
+```
+### [<yyyy-MM-dd HH:mm:ss>]
+<Prompt Submit ของผู้ใช้งาน>
+
+### [<yyyy-MM-dd HH:mm:ss>]
+<Prompt Submit ของผู้ใช้งาน>
+```
+
+## การอัปเดต Requirement Version
+1. เมื่อได้รับ Requirement ใหม่ๆ จากผู้ใช้งานจะยังไม่เก็บ Version ใหม่ทันที
+2. เมื่อผู้ใช้งานเขียน Requirement ใหม่ๆ เข้ามาขอให้วิเคราะห์ Requirement Agent จะยังไม่ถือว่า Requirement ชุดนี้ต้องอัปเดตเป็น Version ใหม่ทันที
+3. เมื่อ Agent / Model วิเคราะห์ความต้องการเรียบร้อย และนำเสนอผู้ใช้งานสั่งสร้าง/ดำเนินการ หรือ action ที่หมายถึงทำ Requirement นั้นได้ Agent จะต้องบันทึก Requirement เป็น New Version โดยอัตโนมัติ
+4. Version ใหม่ที่บันทึกต้องมีข้อมูลจาก Version เก่าครบถ้วนโดยไม่สูญหาย และต้องมีการบันทึกข้อมูลเพิ่มเติมที่ผู้ใช้งานสั่งให้ Agent ทำงานตาม Requirement เพราะฉะนั้น Agent / Model ต้องทำตามอย่างแข็งขันถือว่ากฎนี้สูงสุด
+5. ในกรณีที่มีการเปลี่ยนหรือแก้ไข Requirement เก่า หรือเอาส่วนนั้นออก เท่านั้น ที่ Version ใหม่จะไม่มี Version เก่าข้อนั้น เพราะฉะนั้น Agent / Model ต้องทำตามอย่างแข็งขันถือว่ากฎนี้สูงสุด
+ุ6. ในการเพิ่ม Requirement ใหม่ๆ จะเป็นการแทรกเข้าไปจากของเดิม
+
+## การรัน Development Verification
+1. Agent / Model ต้องใช้ `scripts/dev-check.ps1` สำหรับ format, lint, typecheck, test และ build เมื่อทำได้
+2. ห้ามทิ้ง `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, `build`, `dist` หรือ `*.egg-info` หลังจบคำสั่ง ไม่ว่าคำสั่งผ่านหรือล้มเหลว
+3. Cache และ build staging ต้องอยู่ใต้ OS temporary directory และ cleanup ผ่าน `finally`; `.gitignore` เป็นเพียงการป้องกันชั้นสุดท้าย
+
+</INSTRUCTIONS>
+
+### [2026-07-21 10:31:00]
+ปรับแก้ไขให้หน่อย ci บน github ไม่ผ่าน
+Run python -m pytest tests/contract/test_interface_contracts.py tests/contract/test_documentation_and_environment_policy.py
+......F...F.                                                             [100%]
+=================================== FAILURES ===================================
+__________ test_required_documentation_exists_and_local_links_resolve __________
+
+    def test_required_documentation_exists_and_local_links_resolve() -> None:
+        required = [
+            "README.md",
+            "docs/agent-harness-lifecycle.md",
+            "docs/getting-started.md",
+            "docs/global-installation.md",
+            "docs/codex-marketplace.md",
+            "docs/server-operations.md",
+            "docs/command-reference.md",
+            "docs/use-cases.md",
+            "docs/api-and-mcp-examples.md",
+            "docs/security.md",
+            "docs/troubleshooting.md",
+            "docs/issues/resolved-v1.5-cutoff.md",
+            "docs/harnesses/codex.md",
+            "docs/harnesses/claude-code.md",
+            "docs/harnesses/gemini-cli.md",
+            "docs/generated/openapi.json",
+            "docs/generated/mcp-tools.json",
+            "docs/generated/mcp-bridge-tools.json",
+            "CHANGELOG.md",
+        ]
+>       assert all((ROOT / path).is_file() for path in required)
+E       assert False
+E        +  where False = all(<generator object test_required_documentation_exists_and_local_links_resolve.<locals>.<genexpr> at 0x7fc2798236b0>)
+
+tests/contract/test_documentation_and_environment_policy.py:33: AssertionError
+__________ test_no_python_environment_or_project_temp_payload_exists ___________
+
+    def test_no_python_environment_or_project_temp_payload_exists() -> None:
+        forbidden_names = {".venv", "venv", "virtualenv", ".conda", "pipx", "python-runtime"}
+        offenders = [
+            path for path in ROOT.rglob("*") if path.is_dir() and path.name.lower() in forbidden_names
+        ]
+        assert offenders == []
+        assert not list(ROOT.rglob(".tmp-*"))
+        ignored_residue = {
+            "__pycache__",
+            ".pytest_cache",
+            ".mypy_cache",
+            ".ruff_cache",
+            "build",
+            "dist",
+        }
+>       assert not [path for path in ROOT.rglob("*") if path.is_dir() and path.name in ignored_residue]
+E       AssertionError: assert not [PosixPath('/home/runner/work/sql-context-pack/sql-context-pack/build'), PosixPath('/home/runner/work/sql-context-pack...e/__pycache__'), PosixPath('/home/runner/work/sql-context-pack/sql-context-pack/src/sqlctx/adapters/__pycache__'), ...]
+
+tests/contract/test_documentation_and_environment_policy.py:109: AssertionError
+=========================== short test summary info ============================
+FAILED tests/contract/test_documentation_and_environment_policy.py::test_required_documentation_exists_and_local_links_resolve - assert False
+ +  where False = all(<generator object test_required_documentation_exists_and_local_links_resolve.<locals>.<genexpr> at 0x7fc2798236b0>)
+FAILED tests/contract/test_documentation_and_environment_policy.py::test_no_python_environment_or_project_temp_payload_exists - AssertionError: assert not [PosixPath('/home/runner/work/sql-context-pack/sql-context-pack/build'), PosixPath('/home/runner/work/sql-context-pack...e/__pycache__'), PosixPath('/home/runner/work/sql-context-pack/sql-context-pack/src/sqlctx/adapters/__pycache__'), ...]
+2 failed, 10 passed in 0.37s
+
+### [2026-07-21 10:32:00]
+ห้ามใช้คำสั่งของ agm เลยมันไม่เกี่ยวกันเลย
+
+### [2026-07-21 10:46:33]
+ยังพบ error  Run python -m pytest -p no:cacheprovider --basetemp="/home/runner/work/_temp/pytest" tests/unit tests/contract
+
+......................................s................................. [ 63%]
+...................................F.....                                [100%]
+=================================== FAILURES ===================================
+_______________________ test_frozen_raw_requirement_hash _______________________
+
+    def test_frozen_raw_requirement_hash() -> None:
+        raw = ROOT / "prompts/requiremenr.raw.prompt.md"
+        expected = (ROOT / "prompts/requiremenr.raw.prompt.sha256").read_text().split()[0].lower()
+>       assert hashlib.sha256(raw.read_bytes()).hexdigest() == expected
+E       AssertionError: assert 'f6bfd477fa08...e3b24108d51e8' == 'ecdde928cbc2...63a21b561b035'
+E
+E         - ecdde928cbc2d25aa0c5586917959bb2b8958409898827a2f2663a21b561b035
+E         + f6bfd477fa088cbc6bed6de625babbd0781c5077d032068dea6e3b24108d51e8
+
+tests/contract/test_spec_integrity.py:103: AssertionError
+=========================== short test summary info ============================
+FAILED tests/contract/test_spec_integrity.py::test_frozen_raw_requirement_hash - AssertionError: assert 'f6bfd477fa08...e3b24108d51e8' == 'ecdde928cbc2...63a21b561b035'
+
+  - ecdde928cbc2d25aa0c5586917959bb2b8958409898827a2f2663a21b561b035
+  + f6bfd477fa088cbc6bed6de625babbd0781c5077d032068dea6e3b24108d51e8
+1 failed, 111 passed, 1 skipped in 2.03s
+
+### [2026-07-21 19:18:17]
+- sqlctx repair ใช้จริงไม่ได้ลองละ
+- เจอปัญหา Secret key แปลกๆ ที่อาจอยู่ใน data หรือ store แล้วสะดุดไปต่อไม่ได้ มันจะซ่อมตัวเองยังไง บน prouction tools << ต้องเพิ่มความสามารถ skip หรือ next record ไป
+- ปรับหน่อย ตาราง lut ต้องดึงทั้งหมด
+- ตารางที่เป็น config_payload (json string) ใช้คำว่า ....json string payload...(xxxx bytes)... แทน เช่นพวกตารางที่ชื่อ payload / config_payload / query_config_payload / query_payload บลา ๆ หรือตรวจสอบถ้ามันยาวมากเกิน200 ตัวควรเข้ารูปแบบบนได้เลย  หรือส่วนใหญ่มักใช้ NVARCHAR(MAX)
+- ไม่มีตัวซ่อม mcp << ตอนนี้ยังไม่มีส่วนของการซ่อมจุดนี้ มันยังใช้ไมได้ ต้องรรันแบบ sqlctx run --harness codex เหมือนเดิม << สั่ง setup เสร็จลองเข้า codex เฉยๆ มันขึ้น Auth UnSupported เลยต้องรันผ่าน harness codex
+- ตอนนี้ export รายการนานๆ แล้วไม่มี status บอกเลย ทำให้ต้องพิมพ์ถาม บ่อยครั้ง
+- ตรวจสอบ และปรับแก้ไขเรื่อง cache ดีๆ ตอนนี้ถ้ารายการ ในฐานข้อมูล เช่น บ่าง table หรือ บาง sp เปลี่ยนไป จะรู้ได้ไหมเพื่ออัปเดตเฉพาะ ไฟล์นั้น ไม่ต้องเสียเวลาโหลดใหม่
+- เป็นไปได้ไหมจะ Optimize การทำงานเพราะ ติดตั้งก็ช้า / โหลดก็ช้าา ทำสองอันรวมกั ใช้เวลาประมาณ 60-70 นาทีซึ่งถือว่านานเกินไปนะ
+
+วิเคราะห์ และทำ Chcklists ก่อนดำเนินการ
+
+### [2026-07-21 19:30:12]
+ดำเนินการปรับแก้ไขทั้งหมด แล เพิ่มอีก 1 ข้อ ฉันรู้สึกว่า Table ที่ export ออกมาควรจะมี description / index / constains ออกมาด้วยนะ
+
+### [2026-07-21 19:59:53]
+PS D:\Projects\46_ArgiMap\AIDBDumpSkill> sqlctx repair --component mcp --source D:\Projects\46_ArgiMap\AIDBDumpSkill
+Usage: sqlctx repair [OPTIONS]
+Try 'sqlctx repair --help' for help.
+╭─ Error ────────────────────────────────────────────────────────────────────────────────────────────╮
+│ No such option: --component                                                                        │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────╯
+PS D:\Projects\46_ArgiMap\AIDBDumpSkill> sqlctx repair --component mcp --source 'D:\Projects\46_ArgiMap\AIDBDumpSkill'
+Usage: sqlctx repair [OPTIONS]
+Try 'sqlctx repair --help' for help.
+╭─ Error ────────────────────────────────────────────────────────────────────────────────────────────╮
+│ No such option: --component                                                                        │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────╯
+PS D:\Projects\46_ArgiMap\AIDBDumpSkill> sqlctx doctor --mcp
+Usage: sqlctx doctor [OPTIONS]
+Try 'sqlctx doctor --help' for help.
+╭─ Error ────────────────────────────────────────────────────────────────────────────────────────────╮
+│ No such option: --mcp                                                                              │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────╯
+PS D:\Projects\46_ArgiMap\AIDBDumpSkill> sqlctx update
+{"error": {"code": "UPDATE_SOURCE_REQUIRED", "message": "No trusted install provenance exists; rerun with `sqlctx update --source <release-checkout>`.", "retryable": false}}
+PS D:\Projects\46_ArgiMap\AIDBDumpSkill> sqlctx update --source https://github.com/orchex006/sql-context-pack
+[1/2] Refreshing trusted Git source: D:\Projects\46_ArgiMap\AIDBDumpSkill\https:\github.com\orchex006\sql-context-pack
+{"error": {"code": "UPDATE_SOURCE_REQUIRED", "message": "Recorded source is not a Git checkout; pass `--source <release-checkout>`.", "retryable": false}}
+PS D:\Projects\46_ArgiMap\AIDBDumpSkill>
+
+### [2026-07-21 20:30:17]
+sqlctx doctor --mcp
+{"creates_python_environment": false, "mcp": {"bridge_launcher_ready": true, "codex_auth_display": "Auth Unsupported is expected for a STDIO bridge; use end_to_end_ready.", "end_to_end_ready": true, "transport": "stdio_to_authenticated_loopback_http", "upstream_tool_count": 24}, "profiles": {"configured": 1, "ready": 1}, "python": {"executable_fingerprint": "sha256:f5152a3d1076b41d0d15637eb3034113258d930c1c01acd85ac3df5671324635", "supported": true, "version": "3.13.14"}, "server_metadata_ready": true, "sqlfluff": {"ready": true, "tooling_fingerprint": "sha256:8feca3cbc28613f27788c912ae5a483018b0d532aa2bd86f25f9d5d49bef0bc5", "version": "4.2.2"}}

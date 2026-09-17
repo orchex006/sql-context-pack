@@ -1,0 +1,16 @@
+{
+  "name": "sql-context-pack",
+  "description": "Install and manage the SQL Context Pack Skill, MCP bridge, and local service.",
+  "owner": {
+    "name": "SQL Context Pack contributors"
+  },
+  "plugins": [
+    {
+      "name": "sql-context-pack",
+      "description": "Build sanitized, classified SQL context through the managed local service.",
+      "version": "2.1.0",
+      "source": "./",
+      "category": "development"
+    }
+  ]
+}

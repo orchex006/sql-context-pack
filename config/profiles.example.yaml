@@ -1,0 +1,25 @@
+profiles:
+  agrimap-readonly:
+    engine: sqlserver
+    host_env: AGRIMAP_DB_HOST
+    port: 1433
+    database_env: AGRIMAP_DB_NAME
+    username_env: AGRIMAP_DB_USER
+    password_env: AGRIMAP_DB_PASSWORD
+    allowed_schemas: [agrimap_app]
+    allowed_object_types: [table, procedure]
+    sample_rows_per_table: 10
+    max_sample_rows_per_table: 20
+    masking_policy: strict
+  content-readonly:
+    engine: postgres
+    host_env: CONTENT_DB_HOST
+    port: 5432
+    database_env: CONTENT_DB_NAME
+    username_env: CONTENT_DB_USER
+    password_env: CONTENT_DB_PASSWORD
+    allowed_schemas: [content, identity]
+    allowed_object_types: [table, procedure]
+    sample_rows_per_table: 10
+    max_sample_rows_per_table: 20
+    masking_policy: strict

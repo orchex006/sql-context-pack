@@ -1,0 +1,1 @@
+{"directed":true,"edges":[{"source":"table:app.CONTENT","target":"table:app.UM_USER","type":"FOREIGN_KEY"}],"nodes":[{"id":"table:app.CONTENT","type":"table"},{"id":"table:app.UM_USER","type":"table"}]}

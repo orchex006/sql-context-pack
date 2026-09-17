@@ -1,0 +1,12 @@
+{
+  "name": "sql-context-pack",
+  "version": "2.1.0",
+  "description": "Build sanitized, classified SQL context using the canonical Agent Skill.",
+  "contextFileName": "skills/sql-context-pack/SKILL.md",
+  "mcpServers": {
+    "sql-context-pack": {
+      "command": "sqlctx-mcp-bridge",
+      "args": []
+    }
+  }
+}

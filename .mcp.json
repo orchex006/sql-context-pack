@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sql-context-pack": {
+      "command": "sqlctx-mcp-bridge",
+      "args": []
+    }
+  }
+}

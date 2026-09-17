@@ -1,0 +1,32 @@
+{
+  "request": {
+    "profile": "fixture-readonly",
+    "mode": "selected",
+    "selected_categories": ["content", "um"],
+    "output": "./sql-context"
+  },
+  "catalog": {
+    "request_fingerprint": "sha256:fixture-request",
+    "selection_fingerprint": "sha256:fixture-selection",
+    "preview_pages": [
+      {"items": [{"category": "content", "object_count": 2}], "page": {"next_cursor": "page-2"}},
+      {"items": [{"category": "um", "object_count": 3}], "page": {"next_cursor": null}}
+    ],
+    "analysis_pages": [
+      {"object_ids": ["table:app.CONTENT", "table:app.CONTENT_SHARE", "table:app.LEGACY_X"], "next_cursor": "page-2"},
+      {"object_ids": ["table:app.UM_USER", "table:app.UM_ROLE", "procedure:app.UM_USER_I", "procedure:app.CONTENT_I"], "next_cursor": null}
+    ],
+    "discovered": 7,
+    "analyzed": 7,
+    "analysis_failed": 0,
+    "materialized": 6,
+    "intentionally_excluded": 1,
+    "restricted_by_selection": false,
+    "boundary_relationships": 2
+  },
+  "classification": {
+    "proposal_status": "final_suggested",
+    "after_owner_resolution": "final_confirmed",
+    "consolidated_owner_questions": 1
+  }
+}

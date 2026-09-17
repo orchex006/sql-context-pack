@@ -1,0 +1,4 @@
+items:
+- object_id: table:app.LEGACY_X
+  candidates: []
+  unresolved_option: true

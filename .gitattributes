@@ -1,0 +1,6 @@
+# Hash-protected artifacts must retain their canonical bytes on Windows checkouts.
+docs/spec/*.md text eol=lf
+docs/spec/*.sha256 text eol=lf
+fixtures/realistic-output/** text eol=lf
+prompts/sql*_start.md text eol=lf
+prompts/versions/*.md text eol=lf

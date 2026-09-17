@@ -1,0 +1,224 @@
+{
+  "catalog_profile_injection": {
+    "conflict_error": "PROFILE_CONTEXT_CONFLICT",
+    "missing_error": "PROFILE_NOT_CONNECTED",
+    "profile_required_by_bridge": false,
+    "tool": "sqlctx_create_catalog"
+  },
+  "query_profile_injection": {
+    "conflict_error": "PROFILE_CONTEXT_CONFLICT",
+    "missing_error": "PROFILE_NOT_CONNECTED",
+    "profile_required_by_bridge": false,
+    "tool": "sqlctx_query_data"
+  },
+  "tools": [
+    {
+      "_meta": null,
+      "annotations": null,
+      "description": "Test and activate one database profile for this MCP session.",
+      "execution": null,
+      "icons": null,
+      "inputExample": {
+        "profile": "demo"
+      },
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "profile": {
+            "description": "Exact safe profile name returned by sqlctx_list_profiles.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile"
+        ],
+        "type": "object"
+      },
+      "name": "sqlctx_connect_profile",
+      "outputExample": {
+        "active_profile": null,
+        "connected": true,
+        "previous_profile": null
+      },
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "active_profile": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "previous_profile": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "connected",
+          "active_profile",
+          "previous_profile"
+        ],
+        "type": "object"
+      },
+      "title": null
+    },
+    {
+      "_meta": null,
+      "annotations": null,
+      "description": "Test and atomically replace this MCP session's active profile.",
+      "execution": null,
+      "icons": null,
+      "inputExample": {
+        "profile": "demo"
+      },
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "profile": {
+            "description": "Exact safe profile name returned by sqlctx_list_profiles.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile"
+        ],
+        "type": "object"
+      },
+      "name": "sqlctx_change_profile",
+      "outputExample": {
+        "active_profile": null,
+        "connected": true,
+        "previous_profile": null
+      },
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "active_profile": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "previous_profile": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "connected",
+          "active_profile",
+          "previous_profile"
+        ],
+        "type": "object"
+      },
+      "title": null
+    },
+    {
+      "_meta": null,
+      "annotations": null,
+      "description": "Forget the active profile for this MCP session without cancelling retained jobs.",
+      "execution": null,
+      "icons": null,
+      "inputExample": {},
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "sqlctx_disconnect_profile",
+      "outputExample": {
+        "active_profile": null,
+        "connected": true,
+        "previous_profile": null
+      },
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "active_profile": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "previous_profile": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "connected",
+          "active_profile",
+          "previous_profile"
+        ],
+        "type": "object"
+      },
+      "title": null
+    },
+    {
+      "_meta": null,
+      "annotations": null,
+      "description": "Return the safe active profile name for this MCP session.",
+      "execution": null,
+      "icons": null,
+      "inputExample": {},
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "sqlctx_get_active_profile",
+      "outputExample": {
+        "active_profile": null,
+        "connected": true,
+        "previous_profile": null
+      },
+      "outputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "active_profile": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "previous_profile": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "connected",
+          "active_profile",
+          "previous_profile"
+        ],
+        "type": "object"
+      },
+      "title": null
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg-info
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+.coverage
+htmlcov/
+.venv/
+venv/
+.env
+*.sqlctx.zip
+
+# Runtime/authentication metadata never belongs in the repository.
+.sqlctx-runtime/
+connection-metadata.json
+owner-control.json
+
+# Defensive only; production must not create these in the project.
+.tmp-*/
+.sqlctx-staging/
+
+# Local agent working state: never publish. Kept on disk for development only.
+.agrimap-agent/

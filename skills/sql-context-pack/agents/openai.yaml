@@ -1,0 +1,4 @@
+interface:
+  display_name: "SQL Context Pack"
+  short_description: "Build safe, AI-ready SQL context bundles"
+  default_prompt: "Use $sql-context-pack to export a sanitized database context pack."

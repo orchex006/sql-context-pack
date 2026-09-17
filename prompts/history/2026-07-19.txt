@@ -1,0 +1,273 @@
+### [2026-07-19 08:41:33] 
+วิเคราะห์ Requirement ใหม่หน่อยซึ่งเป็นผลมาจากที่ฉันทดสอบใช้งานจริงเมื่อวานมันเจอหลายจุดที่ต้องปรับปรุง
+
+- ปรับกระบวนการของ MCP/API Server ให้รองรับการ Changes Profiles โดย Agent / Model จะออกแบบวิธีการที่ดีที่สุดให้ ไม่วาจะผ่าน Http Client -> API -> Changes หรือ command ผ่าน Terminal ไปเปลี่ยน Active DB ก็ได้ หรือจะใช้วิธีโยนชื่อ profile ไปกับทุก request ได้หมดครับ
+---> ใช้วิธีไหนบอกกันด้วย
+---> วิธีด้านบนนี้หาก Agent / Model ได้วิธีการแล้วต้องกลับไปวิเคราะห์จุดที่ต้องแก้ไขตามวิธีการใหม่ ของ Requirement เดิม และ  requirement ใหม่ให้ถูกต้องด้วย ง่าย ๆคือต้องสัมพันธ์กันทั้งหมด
+
+- script mode สำหรับ install & เคลียร์กระบวนการติดตั้งให้ง่ายที่สุด -> ต้องรองรับการติดตั้ง window services และ รัน codex ปกติต้องเจอ mcp
+---> ไม่ควรจะต้องรันด้วยคำสั่งยาว ๆ  "py -3 -m sqlctx.cli harness mcp-list --harness codex" มันใช้งานยากเกินไป ---> ต้องมาเป็นแบบ Window Services เลยผู้ใช้งานไม่ต้องทำอะไรเพิ่มแม้แต่นิดเดียว รับ install / Allow access ก้พอ แต่ทุกกระบวนการที่ Script รันต้องมีคำชี้แจงให้ชัดเจนว่ากำลังทำอะไร / ต้องการ Access อะไร / ขอสิทธิ์สำหรับอะไรขึ้นใน Terminal ชัดเจน
+
+- script mode สำหรับ update -> สำหรับกรณี plugins มีการอัปเดต มันจะต้อง ทำกระบวนการติดตั้งให้ใหม่ทั้งหมด รวมถึง window services ด้วย
+---> ผู่ใช้งานควรทำได้ง่าย ๆ เช่น sqlctx update เป็นต้น
+$sql-context-pack update
+sqlctx update
+
+- ต่อเนื่องจากข้อ script update plugins ถ้าเป็นไปได้ควร update file หรือ shell ให้ด้วยลดการเปิดปิดใหม่บ่อย ๆ
+---> ฉันคิดว่าต้องมี Update terminal profile ด้วยจะได้ไม่ต้องเปิดปิด terminal บ่อยเกินไป
+
+- เพิ่ม $sql-context-pack help  -> พร้อมตัวเลือก options แบบโต้ตอบ เพื่อเลือก choice แทนการพิมพ์รวมๆ มันทำให้ไม่ร้ว่าควรพิมพ์อะไร
+---> บางทีไม่รู้เลยต้องสั่งอะไร และมีอะไรให้ใช้ได้บ้าง
+
+- เพิ่มคำสั่ง $sql-context-pack connect / $sql-context-pack connect <ชื่อ profile>
+---> รองรับชุดคำสั่งงานตามนี้
+$sql-context-pack connect agrimap-dev -> Reload profile เพื่อใช้งาน Profile ที่ผู้ใช้งานเลือกใหม่ บน MCP/API ด้วย
+
+- เพิ่มคำสั่ง $sql-context-pack disconnect
+---> สำหรับ deactive profile ของ session นั้น
+
+- เพิ่มคำสั่ง $sql-context-pack change-profile
+---> 
+$sql-context-pack change-profile = Agent / Model จะแสดง Profile List ที่มีอยู่ทั้งหมดขึ้นมาให้ผู้ใช้งานเลือก เมื่อ Enter ค่าคือการเลือกใช้ Profile นั้น -> Reload window service เพื่อใช้งาน Profile ที่ผู้ใช้งานเลือก
+$sql-context-pack change-profile agrimap-dev = Agent / Model จะกำหนด Profile agrimap-dev ไปอัปเดตกับ MCP/API
+
+- เพิ่ม hook เพื่อเก็บ active profile ใน session นั้น ๆ จนกว่าจะปิด codex terminal นั้น หรือ room นั้นถึงจะลืม profile และต้อง active ใหม่
+---> อารมณ์เหมือนเปิดใช้งานโปรแกรม จัดการฐานข้อมูลจะต้องเลือก Connection เพื่อเข้าใช้งาน พอมีการ Active profile เวลารันคำสั่ง จะหมายถึงฐานข้อมูลนั้นทุกครั้ง
+
+- $sql-content-pack profiles -> สำหรับแสดง profile lists
+---> แสดง List profiles ทั้งหมดที่ระบบมีอยู่ออกมา
+
+- ปรับแก้ไขเมื่อมีการ run build dev หรือทสสอบระหว่างพัฒนาของ Agent / Model จะต้องห้ามเกิด folder temp ตกค้างไว้เมื่อทำเสร็จ ต้องเคลียร์ทิ้ง .mypy_cache / .pytest_cache / .ruff_cache / build และห้ามติดขึ้น git
+
+------------
+ตรวจสอบการทำงาน โดยทดสอบเรียก API จริงในการพัฒนาด้วยนะ เพราะมันใช้ไม่ได้เลย รันคราใด ไม่เคยได้ข้อมูลกลับมา ไม่แน่ใจว่า Script ทำงานถูกต้องหมดแล้วจริง ๆ ใช่ไหม เพราะเหมือนมันไม่เคยดึงข้อมูแล้วเจอเลย อาจเป็นยังไม่ active profile จริงรึเปล่า
+--->
+ The skill requires a fixed 38-step export sequence and server-side validation. I’m loading its workflow and operation
+  contracts now; I’ll stop safely if the local owner service or profile is unavailable.
+
+• Running Get-Content -Raw 'C:
+  │ \Users\owner\.codex\plugins\cache\personal\sql-context-pack\1.1.0\skills\sql-context-pack\references\workflow
+  │ .md'
+
+• Ran Get-Content -Raw 'C:
+  │ \Users\owner\.codex\plugins\cache\personal\sql-context-pack\1.1.0\skills\sql-context-pack\references\contracts.md
+
+    … +36 lines (ctrl + t to view transcript)
+    failure.
+
+  │ \Users\owner\.codex\plugins\cache\personal\sql-context-pack\1.1.0\skills\sql-context-pack\references\workflow.md'
+  └ # Exact workflow
+
+
+  │ \Users\owner\.codex\plugins\cache\personal\sql-context-pack\1.1.0\skills\sql-context-pack\references\contracts.md
+
+    … +36 lines (ctrl + t to view transcript)
+    failure.
+
+  └ {"engines": [{"engine": "mariadb", "sqlfluff_dialect": "mariadb"}, {"engine": "mysql", "sqlfluff_dialect": "mysql"},
+        {"engine": "oracle", "sqlfluff_dialect": "oracle"}, {"engine": "postgres", "sqlfluff_dialect": "postgres"},
+        {"engine": "sqlserver", "sqlfluff_dialect": "tsql"}], "object_types": ["table", "procedure"], "interfaces":
+        ["http", "mcp"], "limits": {"sitemap_page_max": 250, "export_batch_max_objects": 25}}
+
+• Called sql-context-pack.sqlctx_list_profiles({})
+  └ {"items": [{"profile": "agrimap-dev", "engine": "sqlserver", "allowed_schemas": ["agrimap_app"],
+  └ {"items": [], "page": {"limit": 250, "returned": 0, "next_cursor": null}}
+
+• Called sql-context-pack.sqlctx_list_exports({"limit":250})
+  └ {"items": [], "page": {"limit": 250, "returned": 0, "next_cursor": null}}
+
+• Called sql-context-pack.sqlctx_sqlfluff_status({})
+  └ {"python_executable_fingerprint": "sha256:f5152a3d1076b41d0d15637eb3034113258d930c1c01acd85ac3df5671324635",
+
+• The service is reachable, agrimap-dev is the only configured profile, and SQLFluff 4.2.2 is ready. I’m testing the
+  read-only database connection before starting the two-pass catalog.
+
+• Ran $target = Join-Path (Get-Location) 'sql'; if (Test-Path -LiteralPath $target) { Get-Item -LiteralPath $target |
+  │ Select-Object FullName, PSIsContainer, LastWriteTime } else { Write-Output "NOT_FOUND: $target" }
+  └ NOT_FOUND: D:\Projects\46_ArgiMap\AgriMapPlatform\services\agmws-identity-netcore\sql
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+• Context creation stopped safely: agrimap-dev could not reach its configured SQL Server host/instance or TCP port.
+
+  No files were created in ./sql. Verify SQL Server availability, TCP/IP, port, firewall, DNS, or the profile
+  configuration, then rerun the request.
+
+### [2026-07-19 08:41:34]
+owner
+
+### [2026-07-19 08:42:00]
+# AGENTS.md instructions for D:\Projects\46_ArgiMap\AIDBDumpSkill
+
+<INSTRUCTIONS>
+# กฎการทำงานของ AGENTS
+- กฎข้อบังคับเหล่านี้ Agent / Model ต้องปฎิบัติตามอย่างเคร่งครัดให้ถือเป็นเหตุผลของการตัดสินใจสูงสุดในการทำงาน
+1. มีการจัดเก็บ Requirement เป็น Version ต่างๆ เพื่อให้สามารถย้อนกลับไปดู Requirement เก่า และ ผู้ใช้งานต้องการเก็บรวบรวมชุดคำสั่งที่ใช้ในกระบวนการสร้างงานของ Agent ตั้งแต่ 0 ไปจนถึง 100 อยากรู้ว่า Prompt จะต้องเขียนแบบไหนยังไงจนได้งานครบถ้วน ดังนั้น Agent / Model ต้องทำตาม "การอัปเดต Requirement Version" อย่างเคร่งครัด
+2. เมื่อจบการสร้างงาน/ทำงานของ Requirement Version ใดๆ แล้ว Agent / Model ต้องบันทึก Changelog.md เพื่อบันทึกข้อมูลการเปลี่ยนแปลงของระบบ
+
+## การบันทึกชุดคำสั่ง Raw Prompt / Prompt Submit ของผู้ใช้งาน
+1. Agent / Model ต้องบันทึกชุดคำสั่ง Prompt ของผู้ใช้งานทุกรายการที่ผู้ใช้งาน Submit เข้ามา โดยต้องบันทึกเป็น Raw Prompt / Prompt Submit ของผู้ใช้งาน และบันทึกไว้ที่ prompts/history/<yyyy-MM-dd>.txt โดย yyyy-MM-dd คือวันที่ผู้ใช้งาน Submit Prompt เข้ามา
+2. โครงการสร้าง Log ของ Agentใช้เทมเพลตแบบนี้
+```
+### [<yyyy-MM-dd HH:mm:ss>]
+<Prompt Submit ของผู้ใช้งาน>
+
+### [<yyyy-MM-dd HH:mm:ss>]
+<Prompt Submit ของผู้ใช้งาน>
+```
+
+## การอัปเดต Requirement Version
+1. เมื่อได้รับ Requirement ใหม่ๆ จากผู้ใช้งานจะยังไม่เก็บ Version ใหม่ทันที
+2. เมื่อผู้ใช้งานเขียน Requirement ใหม่ๆ เข้ามาขอให้วิเคราะห์ Requirement Agent จะยังไม่ถือว่า Requirement ชุดนี้ต้องอัปเดตเป็น Version ใหม่ทันที
+3. เมื่อ Agent / Model วิเคราะห์ความต้องการเรียบร้อย และนำเสนอผู้ใช้งานสั่งสร้าง/ดำเนินการ หรือ action ที่หมายถึงทำ Requirement นั้นได้ Agent จะต้องบันทึก Requirement เป็น New Version โดยอัตโนมัติ
+4. Version ใหม่ที่บันทึกต้องมีข้อมูลจาก Version เก่าครบถ้วนโดยไม่สูญหาย และต้องมีการบันทึกข้อมูลเพิ่มเติมที่ผู้ใช้งานสั่งให้ Agent ทำงานตาม Requirement เพราะฉะนั้น Agent / Model ต้องทำตามอย่างแข็งขันถือว่ากฎนี้สูงสุด
+5. ในกรณีที่มีการเปลี่ยนหรือแก้ไข Requirement เก่า หรือเอาส่วนนั้นออก เท่านั้น ที่ Version ใหม่จะไม่มี Version เก่าข้อนั้น เพราะฉะนั้น Agent / Model ต้องทำตามอย่างแข็งขันถือว่ากฎนี้สูงสุด
+ุ6. ในการเพิ่ม Requirement ใหม่ๆ จะเป็นการแทรกเข้าไปจากของเดิม
+</INSTRUCTIONS>
+<environment_context>
+  <cwd>D:\Projects\46_ArgiMap\AIDBDumpSkill</cwd>
+  <shell>powershell</shell>
+  <current_date>2026-07-19</current_date>
+  <timezone>Asia/Bangkok</timezone>
+  <filesystem><workspace_roots><root>D:\Projects\46_ArgiMap\AIDBDumpSkill</root></workspace_roots><permission_profile type="disabled"><file_system type="unrestricted" /></permission_profile></filesystem>
+</environment_context>
+
+### [2026-07-19 09:02:05]
+approve all.
+
+### [2026-07-19 10:17:59]
+เครื่องนี้ยังไม่ได้ติดตั้ง SQLContextPack Windows Service 
+--> ติดตั้งได้เลย แต่หากมีการ dev แล้ว source ของ MCP/API เปลี่ยนไปจะต้อง re-install windows service ได้หรือรองรับการupdate เพราะรู้สึกว่า windows service เป็นจุดที่ single point of failure เพราะต้องการสิทธิ์ในการทำขั้นสูง มีโอกาสที่ tools install จะไม่ต่อเนื่อง เพราะงั้นแก้จุดนี้และอัปเดตเอกสาร getstartting หรือ installation ด้วย
+- ไม่แน่ใจว่าตรง ตรง db ฉันใส่ connection ผิดไหม มันน่าจะเป็น host: 'xx.xxx.xxx.x\DB2019' นะใส่ใน terminal ไม่แน่ใจถูกไหม
+
+### [2026-07-19 11:35:45]
+ยืนยัน ปรับ trustcert dev ด้วย
+
+### [2569-07-19 12:22:16]
+รูปแบบ trust cert มีใน คู่มือรึยัง
+
+### [2569-07-19 12:27:34]
+ไม่เห็น คู่มือส่วนของการ install / update / uninstall plugins แบบ marketplace
+
+### [2569-07-19 12:29:17]
+คำส่ั่ง sqlctx update มันไปโหลดไฟล์จาก server มาใหม่ไหมพวก source code บน git ฉันเห็นแค่ ติดตั้ง python เท่านั้น
+
+### [2026-07-19 13:04:58]
+ดำเนินการวิเคราะห์ และปรับแก้ไขฉันต้องการให้ ปัญหาพวกนี้หมดไป
+
+sql-context-pack 19/7/69
+- การเสนอหมวดหมู่ยังมีจุดที่ควรปรับปรุง เช่นต้อง validate system tables ด้วย เชื่อมต่อ agrimap-dev สำเร็จ และพบ 778 SQL objects ใน schema agrimap_app แบ่งเป็น 41 หมวด โดยมี 8 objects ที่ยังจัดหมวดไม่ได้:
+
+  allocate (4): ALLOCATE_CHK_Q
+  app (135): APP_AGMO_STATISTIC_COMMON_Q
+  arcgis (1): ARCGIS_HOST_CONFIG
+  auth (14): AUTH_APP
+  boy (1): BOY_TABLE1
+  citizen (1): CITIZEN_INFO_DEFAULT_Q
+  ckan (4): CKAN_LUT_GROUP_Q
+  content (26): CONTENT_BYPASS_Q
+  dd (35): DD_DASHBOARD
+  dm (18): DM_CONTENT_GROUP_Q
+  dw (31): DW_DATASET_ACCESS_APPROVE_U
+  file (5): FILE_STORAGE
+  form (41): FORM_QUESTIONS
+  geoprocessing (5): GEOPROCESSING_JOBS
+  global (3): GLOBAL_TOKENS
+  i122 (2): i122_get_ids
+  i149 (2): i149_get_ids
+  i150 (2): i150_get_ids
+  i151 (2): i151_get_ids
+  import (1): IMPORT_POSITION_I
+  landmark (1): LANDMARK_SEARCH_DATA
+  layer (1): LAYER_MNG_SYMBOL_CONFIG
+  login (3): LOGIN_LDD_I
+  lut (142): LUT_AGRICULTURE
+  req (38): REQ_AGRIMAP_PLUS_APPROVE_U
+  right (9): RIGHT_DEREGISTER
+  satellite (4): SATELLITE_DATA_WAREHOUSE_JOB_D
+  search (2): SEARCH_AUTO_LANDMARK_Q
+  service (1): SERVICE_GW_Q
+  vector (1): VECTOR_RASTER_GP_CONFIG_Q
+  webmap (19): WEBMAP_BASEMAP
+  x (3): X_DM_GROUP_DATA_Q
+  zones (10): ZONES_DISTRICTS
+
+  ต้องการสร้างทั้งหมด ให้ตอบ all หรือระบุชื่อหมวดที่ต้องการ เช่น auth, um, right ครับ
+
+พวกข้อมุล ixxxx พวกนี้ไม่จำเป็นต้องเอามา และฐานข้อมูลที่พบจริง มันมี schema อื่นด้วย เช่น agrimap_etl / agrimapadm ซึ่ง profile เป็น agrimap_app มันสามารถอ่าน agriamp_etl ได้เพราะฉะนั้น มันควรจะต้องเห็น lists ด้วย
+agrimap_app -> agrimap_etl -> agrimapadm
+
+- ตรวจสอบดูง่ามีระบบ cache หมวดหมู่ ถ้าไม่มีอยากให้เพิ่ม cache ตาม session สำรองข้อมูลเพียง 1 วัน วิธีตรวจสอบว่าข้อมูลอัปเดตเบื้องต้นอาจจะเช็คจำนวนตาราง หรือหาดู last update ของ table / sp ที่มีการเปลี่ยนแปลง ให้ re-cache ใหม่น่าจะดีกว่า -> cache ราย session เท่านั้น
+
+---------------------
+การอนุมัติยังไม่สำเร็จ เพราะ service ตอบ APPROVAL_REQUIRED แต่ไม่ส่ง Challenge ID กลับมาตาม contract
+
+  หากมี Challenge ID แสดงในหน้าต่าง owner ให้รัน:
+
+  sqlctx approvals grant --challenge <CHALLENGE_ID>
+
+  แล้วส่ง Challenge ID หรือแจ้งว่า grant สำเร็จ ผมจะ retry payload เดิมทันทีครับ
+
+ข้อมูลส่วนนี้ไม่มีการแจ้งชัดเจน แม้แต่ owner ก็หา challenge ID ไม่เจอ ไปต่อไม่ได้ --> ไม่รู้กระทั่ง temp การทำงานของ MCP/API อยู่ไหน และ ไม่รู้ว่าการประมวลผลพวกนี้ เกิดขยะแค่ไหน และลบออกไหมทุกครั้งที่เเจนเสร็จ ซึ่งตรงนี้ Agent วางระบบ API ไว้แบบนี้ ก็ควรติดตาม Challege ID เองไหมส่วนถ้าอยากให้ user กดใส่เองก็ push หรือแจ้งเตือนอะไรที่เห้นได้ชัดหน่อย แต่คงไม่ต้อง สั่งการเองได้เลย
+
+โดยรวมใช้งานยากมาก ตรง challenge code 
+
+โค้ดหมดอายุยังไม่รู้เรื่องเลยอีกอย่าง ขึ้น windows service แล้วควรจะซ่อน errorr นะ เป็น error ที่มุนษย์อ่านเข้าใจมากกว่า error trace ส่วนถ้ารันทดสอบ เห็น error trace ไม่ติดเลย
+
+### [2026-07-19 13:40:55]
+พวกนี้ ไม่แน่ใจว่า tmp ของ build อีกไหมถ้าใช่เอาออกด้วย
+
+D:\Projects\46_ArgiMap\AIDBDumpSkill\src\sql_context_pack.egg-info หรือเคลียร์ทิ้งให้หมด
+
+### [2026-07-19 13:44:37]
+เวลามีแก้ไข MCP/API เสร็จสิ้นฉันต้องอัปเดต windwo service ไหม
+
+### [2026-07-19 13:45:49]
+แล้วถ้า ต้องใช้ --source {xxx} แบบนี้ คนอืนจะสะดวกได้ไง เพราะเขาไม่รู้ว่า folder อยู่ไหนด้วยซ้
+
+### [2026-07-19 13:50:53]
+สรุปว่า เราเราทำแบบนี้ไม่ได้หรอ
+
+codex plugin marketplace add orchex006/sql-context-pack
+codex plugin add agrimap-agent-skills@sql-context-pack
+
+และมันจะติดตั้งทั้งหมดให้เลย การติดตั้งแบบตอนนี้มันยากไป
+
+### [2026-07-19 13:50:53]
+claude plugin marketplace add orchex006/sql-context-pack
+claude plugin install agrimap-agent-skills@sql-context-pack
+
+gemini extensions install https://github.com/orchex006/sql-context-pack
+
+แบบนี้เลย ง่ายดี install เสร็จเป็น skill เลย
+
+### [2026-07-19 13:53:26]
+อีกอย่างนะ sql update ไม่ควรจะต้อง reinstall python ซ้ำๆ นะที่คิด ถ้ามีในเครื่องไม่ต้องลงใหม่แค่ pip ก็พอไหม หรือ ถ้ามี pip sql-context-pack แล้วก็แค่ pull -> build ใหม่รึเปล่า
+
+### [2026-07-19 13:54:24]
+ฝากเช็ค เงื่อนไข cache ด้านบน สำหรับ ทุก installation / update ด้วย
+
+### [2026-07-19 13:55:42]
+แก้ครบแล้วถูกไหม
+
+### [2026-07-19 13:56:23]
+ดำเนินการแก้ให้ครบตามที่แจ้ง
+
+### [2026-07-19 14:01:25]
+เรื่องใช้คำสั่ง install/update/uninstall ผ่าน marketplace plugins ของ codex/claude/gemini
+ตรวจสอบ installer ด้วยมันต้องลบและ remove windows services ด้วย -> วิเคราะห์ออกแบบส่วนนี้ ->
+ดำเนินการปรับแก้ไข เมื่อแล้วเสร็จ -> ปรับปรุงคู่มือให้ล่าสุดจากปัจจุบัน และสรุปผลการปรับแก้ไข ด้วย
+
+### [2569-07-19 14:37:45]
+เรียง คู่มือใหม่ด้วย ฉันอยากให้
+
+### [2569-07-19 14:38:02]
+codex plugin marketplace add orchex006/sql-context-pack
+  codex plugin add sql-context-pack@sql-context-pack
+
+  claude plugin marketplace add orchex006/sql-context-pack
+  claude plugin install sql-context-pack@sql-context-pack
+
+  gemini extensions install https://github.com/orchex006/sql-context-pack
+
+อยู่ใน get starting ด้วย

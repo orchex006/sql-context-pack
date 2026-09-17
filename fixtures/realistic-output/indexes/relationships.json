@@ -1,0 +1,1 @@
+[{"cardinality":"1:N","confidence":"confirmed","source":"table:app.UM_USER","target":"table:app.UM_ROLE"},{"cardinality":"1:N","confidence":"confirmed","source":"table:app.CONTENT","target":"table:app.UM_USER"},{"cardinality":"M:N","confidence":"confirmed","source":"table:app.CONTENT_SHARE","target":"table:app.CONTENT"}]

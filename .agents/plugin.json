@@ -1,0 +1,12 @@
+{
+  "name": "sql-context-pack",
+  "version": "2.1.0",
+  "description": "Build sanitized, classified, AI-ready SQL context bundles through a managed local service.",
+  "author": {
+    "name": "SQL Context Pack contributors"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/orchex006/sql-context-pack",
+  "skills": "./skills/",
+  "mcpServers": "./mcp_config.json"
+}

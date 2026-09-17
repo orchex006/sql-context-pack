@@ -1,0 +1,10 @@
+{
+  "name": "sql-context-pack",
+  "version": "2.1.0",
+  "description": "Canonical SQL Context Pack Skill and owner-started MCP connection metadata.",
+  "author": {
+    "name": "SQL Context Pack contributors"
+  },
+  "license": "MIT",
+  "skills": "./skills/"
+}

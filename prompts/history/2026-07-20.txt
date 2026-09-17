@@ -1,0 +1,403 @@
+### [2026-07-20 09:03:30] 
+ดำเนินการวิเคราะห์เพื่อหาทางปรับแก้ไข
+
+- เรื่อง mcp หาย มันไม่ auto install ให้ผ่านคสั่ง install plusgins marketplace 
+sqlctx launch --profile agrimap-dev --harness codex << สรุปมันต้องใช้ mcp ของ windows service หรือต้องรันเองกันแน่ model hallucination แล้ว
+- ยังเจอปัญหาด้าน timeout แล้วไม่มี fallback
+- ยังเจอปัญหาข้อมูลยาว และโดน transcript ตัดไป << ทำ batch ได้ไหม เพื่อดึงเป็นรอบๆ มาให้ครบก่อน
+- ข้อมูลที่มันดึงมาจริง ๆ คือเท่าไหร่ ตา config ไหม
+- Run ค้างอยู่แถวๆ นี้นานมาก • Calling
+  └ sql-context-pack.sqlctx_export_batch({"catalog_id":"cat_mAtNYmHOCicHyYEyAacwtg","idempotency_key":"codex-sqlctx-cat_mAtNYmHOCicHyYEyAacwtg-batch-
+
+• Called
+  └ sql-context-pack.sqlctx_export_batch({"catalog_id":"cat_mAtNYmHOCicHyYEyAacwtg","idempotency_key":"codex-sqlctx-cat_mAtNYmHOCicHyYEyAacwtg-batch-
+        006","object_ids":
+        ["procedure:agrimap_app.UM_ROLE_USER_I","procedure:agrimap_app.UM_ROLE_USER_IN_Q","procedure:agrimap_app.UM_ROLE_USER_NOTIN_Q","procedure:agrimap_app
+        .UM_ROLE_USER_Q","procedure:agrimap_app.UM_ROLE_USER_SEARCH_Q","procedure:agrimap_app.UM_ROLE_USER_U","procedure:agrimap_app.UM_SYSTEM_USER_Q","proce
+        dure:agrimap_app.UM_USER_CHECK_EMAIL_Q","procedure:agrimap_app.UM_USER_CHECK_ID_CARD_Q","procedure:agrimap_app.UM_USER_CHECK_STORAGE_Q"],"sqlfluff":t
+        rue,"append_samples":true})
+    Error executing tool sqlctx_export_batch: 1 validation error for ExportStatus
+    created_at
+      Extra inputs are not permitted [type=extra_forbidden, input_value='2026-07-19T08:07:53.762870Z', input_type=str]
+        For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+
+• Calling
+  └ sql-context-pack.sqlctx_export_batch({"catalog_id":"cat_mAtNYmHOCicHyYEyAacwtg","idempotency_key":"codex-sqlctx-cat_mAtNYmHOCicHyYEyAacwtg-batch-
+        007","object_ids":
+        ["procedure:agrimap_app.UM_USER_CHECK_TEL_Q","procedure:agrimap_app.UM_USER_D","procedure:agrimap_app.UM_USER_DASHBOARD_Q","procedure:agrimap_app.UM_        USER_DETAIL_Q","procedure:agrimap_app.UM_USER_FUNCTION_PERMISSION_U","procedure:agrimap_app.UM_USER_GROUP_Q","procedure:agrimap_app.UM_USER_I","proce        dure:agrimap_app.UM_USER_IMAGE_PROFILE_Q","procedure:agrimap_app.UM_USER_IMAGE_PROFILE_U","procedure:agrimap_app.UM_USER_ORGANIZATION_Q"],"sqlfluff":        true,"append_samples":true}) 
+- 10 นาที สำหรับการรันสร้างข้อมูล 126obj นานไปจริง ๆ  << ความสะดวกดูลดลงเลย นอกจากตอบเยอะแแล้ว ยังได้ของช้า
+ล้มเหลวการทำงาน จนต้องไปใช้ คำสั่งตรงบางอย่าง
+
+ Working C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\_exception_handler.py:42 in wrapped_app
+
+
+  │
+                             │                                                                                                                  │
+                             │   39 │   │   │   await send(message)                                                                             │
+                             │   40 │   │                                                                                                       │
+                             │   41 │   │   try:                                                                                                │
+                             │ > 42 │   │   │   await app(scope, receive, sender)                                                               │
+                             │   43 │   │   except Exception as exc:                                                                            │
+                             │   44 │   │   │   handler = None                                                                                  │
+                             │   45                                                                                                             │
+                             │                                                                                                                  │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\middleware\asyncexitstack.py:18 in        │
+                             │ __call__                                                                                                         │
+                             │                                                                                                                  │
+
+                             │   16 │
+                             │   17 │   │   │   scope[self.context_name] = stack
+                             │ > 18 │   │   │   await self.app
+
+                             │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\sit
+                             │
+                             │   657 │   │   """
+                             │   658 │   │   The ma
+
+  Working in                 │ > 660 │
+
+
+  app                    │
+                             │                                                                                                                  │
+                             │   2682 │   │   │   match, child_scope = route.matches(scope)                                                     │
+                             │   2683 │   │   │   if match == Match.FULL:                                                                       │
+                             │   2684 │   │   │   │   scope.update(child_scope)                                                                 │
+                             │ > 2685 │   │   │   │   await route.handle(scope, receive, send)                                                  │
+                             │   2686 │   │   │   │   return                                                                                    │
+                             │   2687 │   │   │   if match == Match.PARTIAL and partial is None:                                                │
+                             │   2688 │   │   │   │   partial = (route, child_scope)                                                            │
+                             │                                                                                                                  │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\routing.py:1267 in handle                 │
+                             │                                                                                                                  │
+                             │   1264 │   │   │   │   _effective_route_context_var.reset(token)                                                 │
+                             │   1265 │   │   │   await app(scope, receive, send)                                                               │
+                             │   1266 │   │   │   return                                                                                        │
+                             │ > 1267 │   │   await super().handle(scope, receive, send)                                                        │
+                             │   1268                                                                                                           │
+                             │   1269                                                                                                           │
+
+                             │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\ro
+                             │
+
+                             │       headers=headers)
+                             │   274 │   │   │   await response(scope, receive, sen
+                             │   275 │   │   e
+                             │ > 276 │   │   │   await self.app(scope, receive, se
+                             │   277 │
+
+•                            │   279 │
+
+
+   149 │   │                                                                                                     │
+                             │    150 │   │   # Same as in Starlette                                                                            │
+                             │ >  151 │   │   await wrap_app_handling_exceptions(app, request)(scope, receive, send)                            │
+                             │    152 │                                                                                                         │
+                             │    153 │   return app                                                                                            │
+                             │    154                                                                                                           │
+                             │                                                                                                                  │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\_exception_handler.py:53 in wrapped_app │
+                             │                                                                                                                  │
+                             │   50 │   │   │   │   handler = _lookup_exception_handler(exception_handlers, exc)                                │
+                             │   51 │   │   │                                                                                                   │
+
+                             │ > 53 │
+                             │   54 │   │   │
+                             │   55 │   │   │   if response_st
+
+                             │      started.") from exc
+                             │
+                             │ C:\Users\owner
+                             │
+                             │   39 │   │   │   awa
+
+   orking│                   │   41 │
+
+
+                                                                                                                    │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\routing.py:137 in app                     │
+                             │                                                                                                                  │
+                             │    134 │   │   │   │   scope["fastapi_inner_astack"] = request_stack                                             │
+                             │    135 │   │   │   │   async with AsyncExitStack() as function_stack:                                            │
+                             │    136 │   │   │   │   │   scope["fastapi_function_astack"] = function_stack                                     │
+                             │ >  137 │   │   │   │   │   response = await f(request)                                                           │
+                             │    138 │   │   │   │   await response(scope, receive, send)                                                      │
+                             │    139 │   │   │   │   # Continues customization                                                                 │
+                             │    140 │   │   │   │   response_awaited = True                                                                   │
+                             │                                                                                                                  │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\routing.py:691 in app                     │
+
+                             │    688
+                             │    689 │   │   │   │   response.headers.raw.extend(solved_result.response.h
+                             │    690 │   │   │   else:
+
+                             │    692 │   │   │   │   │   dependant=dependant,
+                             │    693 │   │   │   │   │   values=solved_result.valu
+                             │    694 │   │
+                             │
+                             │ C:\Users\owner\AppD
+
+•   rking│                   │    344
+
+
+
+                             │    350 def _build_response_args(                                                                                 │
+                             │                                                                                                                  │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\concurrency.py:34 in run_in_threadpool  │
+                             │                                                                                                                  │
+                             │   31                                                                                                             │
+                             │   32 async def run_in_threadpool(func: Callable[P, T], *args: P.args, **kwargs: P.kwargs) ->                     │
+                             │      T:                                                                                                          │
+
+                             │ > 34 │
+                             │   35
+                             │   36
+
+                             │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\sit
+                             │
+                             │   62 │   │   │   stacklevel=2,
+                             │   63 │   │   )
+
+•    king2641                │ > 65 │
+
+
+   in               │
+                             │ run_sync_in_worker_thread                                                                                        │
+                             │                                                                                                                  │
+                             │   2638 │   │   │   │   │   worker_scope = scope._parent_scope                                                    │
+                             │   2639 │   │   │   │                                                                                             │
+                             │   2640 │   │   │   │   worker.queue.put_nowait((context, func, args, future, worker_scope))                      │
+                             │ > 2641 │   │   │   │   return await future                                                                       │
+                             │   2642 │                                                                                                         │
+                             │   2643 │   @classmethod                                                                                          │
+                             │   2644 │   def check_cancelled(cls) -> None:                                                                     │
+
+                             │ C:\Use
+                             │
+                             │   1030 │   │   │   │   │   exce
+
+                             │   1032 │   │   │   │   │   try:
+                             │ > 1033 │   │   │   │   │   │   result = context.run(
+                             │   1034 │   │
+                             │   1035 │   │   │   │   │   │   exception = exc
+                             │   1036 │   │   │   │
+
+                             │ C:\User
+
+
+   │
+                             │   292 │                                                                                                          │
+                             │   293 │   @app.post("/api/v1/exports/{export_id}/cancel", response_model=ExportStatus)                           │
+                             │   294 │   def cancel_export(export_id: str, _: str = auth) -> Any:                                               │
+                             │                                                                                                                  │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\sqlctx\exporting\service.py:175 in status         │
+                             │                                                                                                                  │
+                             │   172 │   │   artifact = ExportArtifact.model_validate(raw_artifact) if raw_artifact else None                   │
+                             │   173 │   │   report = self.state.read_json(f"exports/{export_id}/report.json",                                  │
+                             │       {"object_results": []})                                                                                    │
+                             │   174 │   │   results = report["object_results"]                                                                 │
+                             │ > 175 │   │   return ExportStatus(                                                                               │
+                             │   176 │   │   │   **job.model_dump(mode="json"),                                                                 │
+                             │   177 │   │   │   size_bytes=artifact.size_bytes if artifact else None,                                          │
+
+                             │
+                             │ C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\pydantic\mai
+                             │
+
+                             │    261 │   │   # `__tracebackhide__` tells pytest an
+                             │        from tracebacks
+                             │    262 │   │
+                             │ >  263 │   │   validated_self = self.__pydantic_val
+                             │        self_instance
+
+•     ingtype                │    265
+
+
+  =extra_forbidden, input_value='2026-07-19T08:05:00.786924Z', input_type=str]
+                                 For further information visit https://errors.pydantic.dev/2.13/v/extra_forbidden
+INFO:     127.0.0.1:56921 - "GET /api/v1/exports/exp_6zztSFJuDfloN1P9-KY6gA HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\uvicorn\protocols\http\h11_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\uvicorn\middleware\proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\middleware\base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\sqlctx\server\http\app.py", line 104, in protect_mcp
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\routing.py", line 2685, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\routing.py", line 1267, in handle
+    await super().handle(scope, receive, send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\routing.py", line 151, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\routing.py", line 137, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\fastapi\routing.py", line 691, in app
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\owner\AppData\Roaming\Python\Python313\site-packages\anyio\to_thread.py", line 65, in run_sync
+
+bundle artifacts อยู่ใน runtime exports ครบ ผมจะ assemble จากไฟล์ zip เหล่านั้นโดยตรง แล้ว validate inventory ใน ./sql ครับ
+
+• Ran $ErrorActionPreference = 'Stop'
+  │ $output = Join-Path (Get-Location) 'sql'
+  │ $exports =
+  │ … +8 lines
+  └ {"files": [{"path": "catalog.json", "sha256": "sha256:1ff47118871dedcca4a9881abba3db0b69d6b91cc492662b9d94741a8284ef2d", "size_bytes": 5543689}, {"path":
+    "categories.yaml", "sha256": "sha256:6f22284532276a58297f47fea683764695c0290a41b134b46013b3d842155bee", "size_bytes": 27}, {"path": "content/
+
+• assemble แบบทีละ bundle ทำให้ manifest ชั่วคราวมองไฟล์จาก batch ก่อนหน้าเป็น stale managed files ต้อง assemble รวมทุก bundle ในคำสั่งเดียว ผมจะเช็ค help แล้วรันแบบหลาย
+  --bundle ถ้ารองรับครับ
+
+• Running sqlctx validate output --root .\sql
+
+• Ran sqlctx export assemble --help
+  └
+
+---------
+- สามารถทำงานจบได้แต่ใช้เวลาถึง 18 นาทีในการ export
+- อยากเพิ่ม sample data รูปแบบที่จะออกมาเป็นแบบ csv / markdown (default) / json
+- การจำแนกประเภท export แล้วจะต้อง ดึงเป็น default ให้เสมอคือ LUT เพื่อให้เข้าใจ meta data มากขึ้น
+- ข้อมูล json ที่สร้างมาเป็นประโยชน์ต่อ AI หรอ ดูแล้วท่าจะเปลือง token นะถ้าเผลอไป read เพราะงั้น default คือ ปิดไว้ หรือ skip กระบวนการพวกนี้ไปเลย
+
+### [2026-07-20 10:17:25] 
+ไม่เห็นมีข้อที่บอก  ข้อมูล json ที่สร้างมาเป็นประโยชน์ต่อ AI หรอ ดูแล้วท่าจะเปลือง token นะถ้าเผลอไป read เพราะงั้น default คือ ปิดไว้ หรือ skip กระบวนการพวกนี้ไปเลย  < อันนี้สรุป ปิดเป็น default ไหมหากไม่ส่งคำสั่งชัดข้ามการทำเลย มันเสียเวลา
+
+### [2026-07-20 10:36:47] 
+ดำเนินการปรับแก้ไขหน่อย
+
+### [2026-07-20 11:27:13]
+จะ uninstall เพื่อ ติดตั้งใหม่ทำยังไง
+
+### [2026-07-20 11:31:28]
+ในเอกสาร docs ฉันอยากให้เพิ่ม รวมคำสั่งการใช้งาน ให้ชัดอีกที เฉพาะคำสั่งที่ผ่าน agent + harness ที่ทำให้เราติดตั้ง sql-context-pack โดยไม่ต้องไป install เอง ผ่านพวก sqlctx เลย
+1. install
+2. repair & update
+4. command list 
+3. uninstall
+
+### [2026-07-20 11:34:48]
+$sql-context-pack uninstall
+
+### [2026-07-20 12:38:09]
+ตรวจสอบอีกที command การติดตั้ง รองรับ linux / macos ไหม หรือรองรับแค่ windows เท่านั้น เพราะเห็นใช้ .ps1
+
+### [2026-07-20 14:00:09]
+วิเคราะห์ และปรับแก้ไข
+- $sql-context-pack connect agrimap-dev ยังเฟล
+- ต้องเพิ่มให้ remove profile ได้ด้วย
+- ดูเหมือนมันยังรัน MCP ใหม่เอง
+• The SQL Context Pack MCP catalog/export tools still aren’t exposed in this room, even after setup. I’m checking
+  whether launching the protected harness for agrimap-dev will register the active profile for this session; if it
+  blocks, I’ll stop without creating partial output.
+
+• Ran sqlctx launch --harness codex --profile agrimap-dev
+  └ {"profile": "agrimap-dev", "reachable": true}
+    Starting owner-scoped SQL Context Pack service on 127.0.0.1:8765.
+    … +7 lines (ctrl + t to view transcript)
+- จากข้อบนเป็นเพราะตอน $sql-context-pack setup มันไม่ได้ acctiv mcp ให้อย่างสมบูรณ์ด้วย
+- ขยาย timeout มากว่า 300 และต้องแจ้งรายการที่เกี่ยวข้อง แต่โหลดไม่สำเร็จออกมาด้วย
+- retry batch ได้ 3 รอบเท่านั้น
+- ทำไมมัน export แค่ um/content ทุกรอบเลย layer ของการให้ฉันเลือก context หายไปไหนล้ว อีกอย่าง
+คำสั่งแบบนี้ Create all SQL context from the active profile under ./sql-context มันควรจะ export all table + sp ไหม
+
+### [2026-07-20 14:14:16]
+อัปเดตเอกสารด้วย
+
+### [2026-07-20 14:18:40]
+หลังปรับคู่มือเสร็จ  ฉันรบกวนเพิ่ม  ตัวเช็ค OS ด้วยว่าเป็น windows / linux / macOS / Unix จากนั้น พาไป ขั้นตอน install ของแต่ละตัว
+
+### [2026-07-20 19:20:03]
+สามารถปรับแก้ไขให้รองรับ linux / macos / windows / unix ด้วยได้ไหม ต้องครบ cross platform
+
+### [2026-07-20 21:37:30]
+# AGENTS.md instructions for D:\Projects\46_ArgiMap\AIDBDumpSkill
+
+<INSTRUCTIONS>
+# กฎการทำงานของ AGENTS
+- กฎข้อบังคับเหล่านี้ Agent / Model ต้องปฎิบัติตามอย่างเคร่งครัดให้ถือเป็นเหตุผลของการตัดสินใจสูงสุดในการทำงาน
+1. มีการจัดเก็บ Requirement เป็น Version ต่างๆ เพื่อให้สามารถย้อนกลับไปดู Requirement เก่า และ ผู้ใช้งานต้องการเก็บรวบรวมชุดคำสั่งที่ใช้ในกระบวนการสร้างงานของ Agent ตั้งแต่ 0 ไปจนถึง 100 อยากรู้ว่า Prompt จะต้องเขียนแบบไหนยังไงจนได้งานครบถ้วน ดังนั้น Agent / Model ต้องทำตาม "การอัปเดต Requirement Version" อย่างเคร่งครัด
+2. เมื่อจบการสร้างงาน/ทำงานของ Requirement Version ใดๆ แล้ว Agent / Model ต้องบันทึก Changelog.md เพื่อบันทึกข้อมูลการเปลี่ยนแปลงของระบบ
+
+## การบันทึกชุดคำสั่ง Raw Prompt / Prompt Submit ของผู้ใช้งาน
+1. Agent / Model ต้องบันทึกชุดคำสั่ง Prompt ของผู้ใช้งานทุกรายการที่ผู้ใช้งาน Submit เข้ามา โดยต้องบันทึกเป็น Raw Prompt / Prompt Submit ของผู้ใช้งาน และบันทึกไว้ที่ prompts/history/<yyyy-MM-dd>.txt โดย yyyy-MM-dd คือวันที่ผู้ใช้งาน Submit Prompt เข้ามา
+2. โครงการสร้าง Log ของ Agentใช้เทมเพลตแบบนี้
+```
+### [<yyyy-MM-dd HH:mm:ss>] 
+<Prompt Submit ของผู้ใช้งาน>
+
+### [<yyyy-MM-dd HH:mm:ss>]
+<Prompt Submit ของผู้ใช้งาน>
+```
+
+## การอัปเดต Requirement Version
+1. เมื่อได้รับ Requirement ใหม่ๆ จากผู้ใช้งานจะยังไม่เก็บ Version ใหม่ทันที
+2. เมื่อผู้ใช้งานเขียน Requirement ใหม่ๆ เข้ามาขอให้วิเคราะห์ Requirement Agent จะยังไม่ถือว่า Requirement ชุดนี้ต้องอัปเดตเป็น Version ใหม่ทันที
+3. เมื่อ Agent / Model วิเคราะห์ความต้องการเรียบร้อย และนำเสนอผู้ใช้งานสั่งสร้าง/ดำเนินการ หรือ action ที่หมายถึงทำ Requirement นั้นได้ Agent จะต้องบันทึก Requirement เป็น New Version โดยอัตโนมัติ
+4. Version ใหม่ที่บันทึกต้องมีข้อมูลจาก Version เก่าครบถ้วนโดยไม่สูญหาย และต้องมีการบันทึกข้อมูลเพิ่มเติมที่ผู้ใช้งานสั่งให้ Agent ทำงานตาม Requirement เพราะฉะนั้น Agent / Model ต้องทำตามอย่างแข็งขันถือว่ากฎนี้สูงสุด
+5. ในกรณีที่มีการเปลี่ยนหรือแก้ไข Requirement เก่า หรือเอาส่วนนั้นออก เท่านั้น ที่ Version ใหม่จะไม่มี Version เก่าข้อนั้น เพราะฉะนั้น Agent / Model ต้องทำตามอย่างแข็งขันถือว่ากฎนี้สูงสุด
+ุ6. ในการเพิ่ม Requirement ใหม่ๆ จะเป็นการแทรกเข้าไปจากของเดิม
+
+## การรัน Development Verification
+1. Agent / Model ต้องใช้ `scripts/dev-check.ps1` สำหรับ format, lint, typecheck, test และ build เมื่อทำได้
+2. ห้ามทิ้ง `__pycache__`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, `build`, `dist` หรือ `*.egg-info` หลังจบคำสั่ง ไม่ว่าคำสั่งผ่านหรือล้มเหลว
+3. Cache และ build staging ต้องอยู่ใต้ OS temporary directory และ cleanup ผ่าน `finally`; `.gitignore` เป็นเพียงการป้องกันชั้นสุดท้าย
+
+</INSTRUCTIONS>
+<environment_context>
+  <cwd>D:\Projects\46_ArgiMap\AIDBDumpSkill</cwd>
+  <shell>powershell</shell>
+  <current_date>2026-07-20</current_date>
+  <timezone>Asia/Bangkok</timezone>
+  <filesystem><workspace_roots><root>D:\Projects\46_ArgiMap\AIDBDumpSkill</root></workspace_roots><permission_profile type="disabled"><file_system type="unrestricted" /></permission_profile></filesystem>
+</environment_context>
+
+### [2026-07-20 21:37:30]
+โอเครใจมากเดียวถ้าฉันว่างจะลอง ทำบน mac / linux ดูแต่ makesure โดยการตรวจสอบให้อีกรอบฝั่ง windows ใช้งานได้เหมือนเดิมนะ
+
+### [2026-07-20 21:44:09]
+ถ้ามันไม่ได้ใช้เอาออกได้ไหม กระทบอะไรรึเปล่า
+
+### [2026-07-20 22:21:09]
+งั้นเอา ของ windows ออก เก็บของ os อื่นไว้

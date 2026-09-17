@@ -1,0 +1,1 @@
+[{"edge_type":"routine_write","source_object_id":"procedure:app.UM_USER_I","target_object_id":"table:app.UM_USER"},{"edge_type":"routine_write","source_object_id":"procedure:app.CONTENT_I","target_object_id":"table:app.CONTENT"}]
