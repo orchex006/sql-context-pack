@@ -495,8 +495,31 @@
                 "title": "Display Name",
                 "type": "string"
               },
+              "marker": {
+                "default": "",
+                "title": "Marker",
+                "type": "string"
+              },
               "name": {
                 "title": "Name",
+                "type": "string"
+              },
+              "sensitivity": {
+                "default": "public",
+                "title": "Sensitivity",
+                "type": "string"
+              },
+              "treatment": {
+                "default": "public",
+                "enum": [
+                  "public",
+                  "fake",
+                  "alias",
+                  "generalize",
+                  "redact",
+                  "scan"
+                ],
+                "title": "Treatment",
                 "type": "string"
               }
             },
@@ -505,6 +528,62 @@
               "display_name"
             ],
             "title": "QueryResultColumn",
+            "type": "object"
+          },
+          "RevealHandoff": {
+            "additionalProperties": false,
+            "description": "How the user can see real values themselves; the model never receives them.",
+            "properties": {
+              "columns": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "Columns",
+                "type": "array"
+              },
+              "instruction": {
+                "default": "Do not try to obtain these values. Give the user the steps below; they run the query themselves, outside the AI session, and the values stay with them.",
+                "title": "Instruction",
+                "type": "string"
+              },
+              "model_may_view": {
+                "const": false,
+                "default": false,
+                "title": "Model May View",
+                "type": "boolean"
+              },
+              "profile": {
+                "title": "Profile",
+                "type": "string"
+              },
+              "reason": {
+                "enum": [
+                  "protected_columns",
+                  "restricted_usage"
+                ],
+                "title": "Reason",
+                "type": "string"
+              },
+              "sql": {
+                "title": "Sql",
+                "type": "string"
+              },
+              "user_steps": {
+                "items": {
+                  "type": "string"
+                },
+                "title": "User Steps",
+                "type": "array"
+              }
+            },
+            "required": [
+              "reason",
+              "columns",
+              "profile",
+              "sql",
+              "user_steps"
+            ],
+            "title": "RevealHandoff",
             "type": "object"
           }
         },
@@ -531,10 +610,28 @@
             "title": "Profile",
             "type": "string"
           },
+          "protected_value_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Protected Value Counts",
+            "type": "object"
+          },
           "returned_row_count": {
             "minimum": 0,
             "title": "Returned Row Count",
             "type": "integer"
+          },
+          "reveal_handoff": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/RevealHandoff"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           },
           "truncated": {
             "default": false,

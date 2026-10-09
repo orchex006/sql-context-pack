@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from sqlctx.adapters.base import QueryColumnMetadata
+from sqlctx.core.errors import SqlCtxError
 from sqlctx.query_data.contracts import QueryDataRequest
 from sqlctx.query_data.masking import EphemeralQueryMasker
 
@@ -36,12 +37,20 @@ def test_secret_cannot_be_declassified_by_query(sql: str, streaming: bool) -> No
     )
     service = FIXTURE["service"]()
     request = QueryDataRequest(profile="demo", sql=sql, value_mode="full")
-    if streaming:
-        output = "\n".join(
-            service.stream_markdown(request, profile=FIXTURE["profile"](), adapter=adapter)
-        )
-    else:
-        output = service.execute(request, profile=FIXTURE["profile"](), adapter=adapter).markdown
+    try:
+        if streaming:
+            output = "\n".join(
+                service.stream_markdown(request, profile=FIXTURE["profile"](), adapter=adapter)
+            )
+        else:
+            output = service.execute(
+                request, profile=FIXTURE["profile"](), adapter=adapter
+            ).markdown
+    except SqlCtxError as exc:
+        # 3.0.0: a protected column inside a function or CASE is refused before execution.
+        assert exc.code == "QUERY_SENSITIVE_USAGE_RESTRICTED"
+        assert secret not in str(exc.public_payload())
+        return
     assert secret not in output
     assert "[REDACTED]" in output
 

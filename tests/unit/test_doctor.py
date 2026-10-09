@@ -24,7 +24,7 @@ def test_doctor_default_does_not_write_or_start_database(tmp_path: Path, monkeyp
     result = CliRunner().invoke(main.app, ["doctor"])
     assert result.exit_code == 0
     payload = json.loads(result.output)
-    assert payload["versions"]["package"] == "2.1.0"
+    assert payload["versions"]["package"] == __version__
     assert payload["status"] == "attention"
     assert not (tmp_path / "absent-runtime").exists()
 
@@ -37,7 +37,7 @@ def test_doctor_version_has_no_probe(monkeypatch: Any) -> None:
     )
     result = CliRunner().invoke(main.app, ["doctor", "version", "--host", "claude"])
     assert result.exit_code == 0
-    assert json.loads(result.output) == {"host": "claude", "package_version": "2.1.0"}
+    assert json.loads(result.output) == {"host": "claude", "package_version": __version__}
 
 
 def test_doctor_update_preserves_selected_host(tmp_path: Path, monkeypatch: Any) -> None:

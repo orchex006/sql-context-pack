@@ -156,6 +156,8 @@ class ValidatedQuery:
     parameters: tuple[Any, ...]
     tables: tuple[ObjectRef, ...]
     lineage: MaskingLineage = MaskingLineage(fallback=None)
+    # Parsed tree, kept for the sensitive-usage guard that runs once tables are classified.
+    tree: Any = None
 
 
 class QueryValidator:
@@ -239,7 +241,11 @@ class QueryValidator:
         for start, stop, replacement in sorted(replacements, reverse=True):
             canonical = canonical[:start] + replacement + canonical[stop:]
         return ValidatedQuery(
-            sql=canonical.strip(), parameters=parameters, tables=tables, lineage=build_lineage(tree)
+            sql=canonical.strip(),
+            parameters=parameters,
+            tables=tables,
+            lineage=build_lineage(tree),
+            tree=tree,
         )
 
     @staticmethod

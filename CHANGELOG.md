@@ -2,6 +2,55 @@
 
 Release history. For how to use the product, start with [Getting Started](docs/getting-started.md).
 
+## 3.0.0 — 2026-10-09
+
+Requirement [v1.1](docs/spec/design-spec-v1.1.md). Sensitive data must never reach an AI
+model, and so can never be retained or used to train one. Migration notes:
+[docs/releases/3.0.0.md](docs/releases/3.0.0.md).
+
+**Why.** An owner review of 2.1.0 found that classification failed open: an unrecognised
+column was public. Measured on 2.1.0, `FIRST_NAME`, `LNAME`, `FARMER_NAME`, `PWD`, `TOKEN`,
+`ADDR`, `LATITUDE` and free text in `REMARK` were returned raw, and `ID_CARD`, `DOB` and
+`BANK_ACC_NO` were masked only because their values happened to look like phone numbers.
+Masked values could also be recovered through `WHERE`/`LIKE`/`LEN`.
+
+**Security — classification and treatment**
+
+- Add Thai/AgriMap and abbreviated column-name rules, camelCase splitting, a `free_text`
+  class, and value rules for Thai IDs, Thai and international phones, cards and titled names.
+- Read SQL Server `sys.sensitivity_classifications`; any classified column is sensitive.
+- Replace names, Thai IDs, phone, card and account numbers with tool-generated fakes that keep
+  the original layout. Fake identifiers start with `0` so they can never be a real issued
+  number; fake Thai IDs carry a valid check digit. Fakes are HMAC-chosen and deterministic per
+  key: random per query for Query Data, the protected snapshot key for exports.
+- Generalize address, date of birth (year) and precise location (one decimal place).
+- Scan every string and JSON value for embedded personal data, not only whole-value matches.
+- Redact personal data in routine string literals and table descriptions as visible
+  `[REDACTED:<CLASS>]` marks rather than fakes, so a routine is never redeployed with a fake
+  value that looks real.
+
+**Security — inference guard and reveal handoff**
+
+- Reject protected columns outside a plain projection — `WHERE`, `JOIN … ON`, `GROUP BY`,
+  `ORDER BY`, `HAVING`, windows, `CASE`, functions, including through aliases — with
+  `QUERY_SENSITIVE_USAGE_RESTRICTED` (403).
+- Results with protected columns and every restriction error carry `reveal_handoff`
+  (`model_may_view: false`) so the user runs the query themselves.
+- Add owner CLI `sqlctx query --reveal` (interactive terminal plus typed confirmation; refuses
+  non-interactive execution; never wired to MCP or HTTP) and `--sql-file`.
+
+**Contracts**
+
+- `QueryResultColumn` adds `sensitivity`, `treatment`, `marker`; `QueryDataResult` adds
+  `protected_value_counts`, `reveal_handoff`. Markdown headers carry the marker.
+- `SamplePage` adds `column_markers`; sample headers are marked; export reports add
+  `pii_literals_redacted`. `SensitivityClass` adds `free_text`.
+- Skill: new "Sensitive data" section — say when a quoted value is fake, never work around the
+  guard, relay `reveal_handoff` verbatim, never run `--reveal`.
+
+**Owner decisions recorded in v1.1:** no schema-only mode, no owner override file, no `doctor`
+scan of 2.x exports.
+
 ## 2.1.0 — 2026-09-17
 
 First released version. The repository history begins here, and every earlier internal

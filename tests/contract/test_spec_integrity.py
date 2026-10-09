@@ -46,19 +46,31 @@ def test_start_prompt_and_preserved_specification_are_identical() -> None:
     assert prompt.read_bytes() == preserved.read_bytes()
 
 
-def test_only_the_reset_baseline_remains() -> None:
+def test_only_the_reset_baseline_and_its_additive_successors_remain() -> None:
     """The v1.1-v1.27 development chain was removed; nothing may quietly reintroduce it."""
-    assert _versions() == [BASELINE]
+    versions = _versions()
+    assert versions[0] == BASELINE
     assert not list((ROOT / "prompts").glob("sql_contxt_pack_design_spc_v1.[1-9]*_start.md"))
     assert not (ROOT / "prompts/versions").exists()
+    for previous, current in zip(versions, versions[1:], strict=False):
+        older = (SPEC_DIR / f"design-spec-{previous}.md").read_bytes()
+        newer = (SPEC_DIR / f"design-spec-{current}.md").read_bytes()
+        # A new version retains the previous version's content in full (AGENTS.md section 7).
+        assert older in newer, f"{current} does not retain {previous} in full"
 
 
-def test_baseline_declares_the_current_product_version() -> None:
+def test_baseline_declares_its_specification_version() -> None:
+    text = (SPEC_DIR / f"design-spec-{BASELINE}.md").read_text(encoding="utf-8")
+    assert re.search(r"^\*\*Specification version:\*\* `1\.0`$", text, re.MULTILINE)
+
+
+def test_latest_requirement_declares_the_current_product_version() -> None:
     from sqlctx import __version__
 
-    text = (SPEC_DIR / f"design-spec-{BASELINE}.md").read_text(encoding="utf-8")
+    latest = _versions()[-1]
+    text = (SPEC_DIR / f"design-spec-{latest}.md").read_text(encoding="utf-8")
+    assert text.startswith(f"# SQL Context Pack — Requirement {latest}\n")
     assert f"Product/package/Skill version: {__version__}." in text
-    assert re.search(r"^\*\*Specification version:\*\* `1\.0`$", text, re.MULTILINE)
 
 
 def test_frozen_raw_requirement_hash() -> None:

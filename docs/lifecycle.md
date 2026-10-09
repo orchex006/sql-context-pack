@@ -139,6 +139,12 @@ separate owner decision, not part of uninstall.
 - A new session sees the same Skill and tool set.
 - `metadata_context_write` and `routine_write` are still `false` unless you enabled them.
 
+## Version 3.0.0
+
+See the [release and migration notes](releases/3.0.0.md) before upgrading: Query Data now
+returns marked fakes and rejects protected columns in filters and functions. Full history is
+in [CHANGELOG.md](../CHANGELOG.md).
+
 ## Version 2.1.0
 
 See the [release and migration notes](releases/2.1.0.md) before upgrading: Query Data rejects

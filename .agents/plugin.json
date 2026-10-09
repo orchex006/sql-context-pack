@@ -1,6 +1,6 @@
 {
   "name": "sql-context-pack",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Build sanitized, classified, AI-ready SQL context bundles through a managed local service.",
   "author": {
     "name": "SQL Context Pack contributors"

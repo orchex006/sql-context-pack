@@ -99,7 +99,7 @@ module = ["sqlctx.server.mcp.server", "sqlctx.server.mcp.bridge"]
 disable_error_code = ["untyped-decorator", "no-untyped-call", "no-any-return"]
 
 [tool.sqlctx]
-product-version = "2.1.0"
+product-version = "3.0.0"
 output-format-version = "2"
 sqlfluff-version = "4.2.2"
 mcp-sdk-version = "1.28.1"

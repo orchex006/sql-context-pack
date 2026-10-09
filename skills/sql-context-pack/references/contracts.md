@@ -13,7 +13,11 @@ bodies are never MCP resources.
 - Stable idempotency key + same caller/request returns retained work; changed payload returns
   `IDEMPOTENCY_CONFLICT`.
 - Read every preview/sitemap/classification/job cursor until `next_cursor=null`.
-- Query Data is relational SELECT only, masked, 1–500 rows over MCP; no MCP `all_rows`.
+- Query Data is relational SELECT only, protected, 1–500 rows over MCP; no MCP `all_rows`.
+  Results carry `columns[].sensitivity|treatment|marker`, `protected_value_counts` and, when any
+  column is protected, `reveal_handoff` (user-run steps; `model_may_view` is always false).
+  `QUERY_SENSITIVE_USAGE_RESTRICTED` (403) means a protected column was used outside a plain
+  projection; relay its `reveal_handoff`.
 
 ## Managed folders
 
