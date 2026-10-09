@@ -1,69 +1,40 @@
-"""Fail-closed sensitive-data classification, deterministic aliases, and SQL literal scanning."""
+"""Fail-closed sensitive-data protection for snapshots, and SQL literal scanning."""
 
 from __future__ import annotations
 
 import hashlib
 import hmac
 import re
+from collections.abc import Mapping
 from typing import Any
 
 from sqlctx.core.enums import SensitivityClass
 from sqlctx.core.models import MaskingDecision
+from sqlctx.security.protector import REDACTED, ValueProtector
 from sqlctx.security.runtime import EncryptedSnapshotSecretStore
+from sqlctx.security.sensitivity import (
+    CARD,
+    EMAIL,
+    HIGH_RISK,
+    LATIN_TITLED_NAME,
+    PHONE,
+    THAI_ID,
+    THAI_TITLED_NAME,
+    TREATMENT,
+    Treatment,
+)
+
+__all__ = [
+    "HIGH_RISK",
+    "DeterministicMaskingEngine",
+    "column_marker",
+    "redact_pii_text",
+    "scan_and_redact_pii_literals",
+    "scan_and_redact_sql_literals",
+]
+
 
 CROCKFORD = "0123456789abcdefghjkmnpqrstvwxyz"
-
-HIGH_RISK = {
-    SensitivityClass.PASSWORD,
-    SensitivityClass.PASSWORD_HASH,
-    SensitivityClass.SECRET,
-    SensitivityClass.SECRET_KEY,
-    SensitivityClass.PRIVATE_KEY,
-    SensitivityClass.API_KEY,
-    SensitivityClass.CLIENT_SECRET,
-    SensitivityClass.ACCESS_TOKEN,
-    SensitivityClass.REFRESH_TOKEN,
-    SensitivityClass.JWT,
-    SensitivityClass.SESSION_TOKEN,
-    SensitivityClass.COOKIE,
-    SensitivityClass.BIOMETRIC,
-}
-
-EXACT_RULES = {
-    "national_id": SensitivityClass.NATIONAL_ID,
-    "citizen_id": SensitivityClass.NATIONAL_ID,
-    "username": SensitivityClass.USERNAME,
-    "user_name": SensitivityClass.USERNAME,
-    "password": SensitivityClass.PASSWORD,
-    "password_hash": SensitivityClass.PASSWORD_HASH,
-    "secret": SensitivityClass.SECRET,
-    "secret_key": SensitivityClass.SECRET_KEY,
-    "private_key": SensitivityClass.PRIVATE_KEY,
-    "api_key": SensitivityClass.API_KEY,
-    "client_secret": SensitivityClass.CLIENT_SECRET,
-    "access_token": SensitivityClass.ACCESS_TOKEN,
-    "refresh_token": SensitivityClass.REFRESH_TOKEN,
-    "jwt": SensitivityClass.JWT,
-    "session_token": SensitivityClass.SESSION_TOKEN,
-    "cookie": SensitivityClass.COOKIE,
-    "email": SensitivityClass.EMAIL,
-    "phone": SensitivityClass.PHONE,
-    "address": SensitivityClass.ADDRESS,
-    "personal_name": SensitivityClass.PERSONAL_NAME,
-    "full_name": SensitivityClass.PERSONAL_NAME,
-    "financial_account": SensitivityClass.FINANCIAL_ACCOUNT,
-    "credit_card": SensitivityClass.CREDIT_CARD,
-    "date_of_birth": SensitivityClass.DATE_OF_BIRTH,
-    "precise_location": SensitivityClass.PRECISE_LOCATION,
-    "biometric": SensitivityClass.BIOMETRIC,
-}
-
-VALUE_PATTERNS = (
-    (re.compile(r"^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$"), SensitivityClass.JWT),
-    (re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$"), SensitivityClass.EMAIL),
-    (re.compile(r"^\+?[0-9][0-9() .-]{7,}$"), SensitivityClass.PHONE),
-    (re.compile(r"^(?:[0-9][ -]*?){13,19}$"), SensitivityClass.CREDIT_CARD),
-)
 
 
 def _crockford(data: bytes) -> str:
@@ -75,9 +46,27 @@ def _crockford(data: bytes) -> str:
     return ("".join(reversed(chars)) or "0").rjust(52, "0")
 
 
+def column_marker(sensitivity: SensitivityClass) -> str:
+    """Visible marker for a protected column, e.g. `⟨FAKE:PERSONAL_NAME⟩`; empty if public."""
+    treatment = TREATMENT.get(sensitivity, "redact")
+    if treatment == "public":
+        return ""
+    label = {
+        "fake": "FAKE",
+        "alias": "ALIAS",
+        "generalize": "GENERALIZED",
+        "redact": "REDACTED",
+        "scan": "SCANNED",
+    }[treatment]
+    return f"⟨{label}:{sensitivity.value.upper()}⟩"
+
+
 class DeterministicMaskingEngine:
+    """Snapshot-scoped protection: one encrypted key per catalog snapshot keeps fakes stable."""
+
     def __init__(self, secrets_store: EncryptedSnapshotSecretStore) -> None:
         self.secrets_store = secrets_store
+        self._protectors: dict[str, ValueProtector] = {}
 
     def classify(
         self,
@@ -89,20 +78,77 @@ class DeterministicMaskingEngine:
     ) -> SensitivityClass:
         if owner_override is not None:
             return owner_override
-        if database_classification is not None:
-            return database_classification
-        normalized = re.sub(r"[^a-z0-9]+", "_", column_name.lower()).strip("_")
-        if normalized in EXACT_RULES:
-            return EXACT_RULES[normalized]
-        tokens = set(normalized.split("_"))
-        for key, sensitivity in EXACT_RULES.items():
-            if set(key.split("_")).issubset(tokens):
-                return sensitivity
-        if isinstance(value, str):
-            for pattern, sensitivity in VALUE_PATTERNS:
-                if pattern.fullmatch(value.strip()):
-                    return sensitivity
-        return SensitivityClass.PUBLIC
+        classes = (
+            {column_name: database_classification} if database_classification is not None else {}
+        )
+        return ValueProtector(b"", column_classes=classes).classify(column_name, value)
+
+    def protector(
+        self,
+        snapshot_id: str,
+        column_classes: Mapping[str, SensitivityClass] | None = None,
+    ) -> ValueProtector:
+        def alias(cls: SensitivityClass, raw: str) -> str:
+            return self._alias(snapshot_id, cls, raw)
+
+        if column_classes:
+            return ValueProtector(
+                self.secrets_store.get_or_create_key(snapshot_id),
+                column_classes=column_classes,
+                alias=alias,
+            )
+        cached = self._protectors.get(snapshot_id)
+        if cached is None:
+            cached = ValueProtector(self.secrets_store.get_or_create_key(snapshot_id), alias=alias)
+            self._protectors[snapshot_id] = cached
+        return cached
+
+    def _alias(self, snapshot_id: str, sensitivity: SensitivityClass, raw_value: str) -> str:
+        """Crockford alias with a protected per-snapshot registry for resume and collisions."""
+        key = self.secrets_store.get_or_create_key(snapshot_id)
+        normalized = raw_value.strip().casefold().encode()
+        digest = hmac.new(key, normalized, hashlib.sha256).digest()
+        digest_hex = digest.hex()
+        encoded = _crockford(digest)
+        registry = self.secrets_store.load_registry(snapshot_id)
+        reverse = {alias: known_digest for known_digest, alias in registry.items()}
+        length = 10
+        while True:
+            alias = f"user_{encoded[:length]}"
+            if sensitivity == SensitivityClass.EMAIL:
+                alias += "@example.invalid"
+            if alias not in reverse or reverse[alias] == digest_hex:
+                break
+            length += 2
+        registry[digest_hex] = alias
+        self.secrets_store.save_registry(snapshot_id, registry)
+        return alias
+
+    def protect_rows(
+        self,
+        *,
+        snapshot_id: str,
+        columns: list[str],
+        rows: list[list[Any]],
+        column_classes: Mapping[str, SensitivityClass] | None = None,
+    ) -> tuple[list[list[Any]], dict[str, str]]:
+        """Protect sample rows and return each protected column's visible marker."""
+        protector = self.protector(snapshot_id, column_classes)
+        protected = [
+            [protector.protect(column, value) for column, value in zip(columns, row, strict=True)]
+            for row in rows
+        ]
+        markers: dict[str, str] = {}
+        for index, column in enumerate(columns):
+            marker = column_marker(protector.column_class(column))
+            if not marker and any(
+                original[index] != masked[index]
+                for original, masked in zip(rows, protected, strict=True)
+            ):
+                marker = "⟨SCANNED⟩"
+            if marker:
+                markers[column] = marker
+        return protected, markers
 
     def mask(
         self,
@@ -120,66 +166,34 @@ class DeterministicMaskingEngine:
             database_classification=database_classification,
         )
         if value is None or sensitivity == SensitivityClass.PUBLIC:
-            return MaskingDecision(
-                sensitivity=sensitivity, action="keep", masked_value=value, rule="public"
+            masked = (
+                value
+                if value is None
+                else self.protector(snapshot_id).protect(column_name, value, sensitivity)
             )
-        if sensitivity in HIGH_RISK:
-            return MaskingDecision(
-                sensitivity=sensitivity,
-                action="redact",
-                masked_value="[REDACTED]",
-                rule="high-risk-secret",
-            )
-        if sensitivity in {
-            SensitivityClass.USERNAME,
-            SensitivityClass.NATIONAL_ID,
-            SensitivityClass.EMAIL,
-            SensitivityClass.PHONE,
-            SensitivityClass.FINANCIAL_ACCOUNT,
-            SensitivityClass.CREDIT_CARD,
-        }:
-            alias = self._alias(snapshot_id, sensitivity, str(value))
             return MaskingDecision(
                 sensitivity=sensitivity,
-                action="alias",
-                masked_value=alias,
-                rule="snapshot-hmac",
+                action="keep" if masked == value else "scan",
+                masked_value=masked,
+                rule="public" if masked == value else "embedded-pii-scan",
             )
+        treatment: Treatment = TREATMENT.get(sensitivity, "redact")
+        masked = self.protector(snapshot_id).protect(column_name, value, sensitivity)
+        if masked == REDACTED:
+            treatment = "redact"
         return MaskingDecision(
             sensitivity=sensitivity,
-            action="generalize",
-            masked_value=f"[{sensitivity.value.upper()}]",
-            rule="strict-generalization",
+            action="keep" if treatment == "public" else treatment,
+            masked_value=masked,
+            rule={
+                "redact": "high-risk-secret" if sensitivity in HIGH_RISK else "fail-closed",
+                "fake": "snapshot-hmac-fake",
+                "alias": "snapshot-hmac",
+                "generalize": "strict-generalization",
+                "scan": "embedded-pii-scan",
+                "public": "public",
+            }[treatment],
         )
-
-    def _alias(self, snapshot_id: str, sensitivity: SensitivityClass, raw_value: str) -> str:
-        key = self.secrets_store.get_or_create_key(snapshot_id)
-        normalized = raw_value.strip().casefold().encode()
-        digest = hmac.new(key, normalized, hashlib.sha256).digest()
-        digest_hex = digest.hex()
-        encoded = _crockford(digest)
-        registry = self.secrets_store.load_registry(snapshot_id)
-        reverse = {alias: known_digest for known_digest, alias in registry.items()}
-        prefix = {
-            SensitivityClass.USERNAME: "user",
-            SensitivityClass.EMAIL: "user",
-            SensitivityClass.PHONE: "phone",
-            SensitivityClass.NATIONAL_ID: "id",
-            SensitivityClass.FINANCIAL_ACCOUNT: "account",
-            SensitivityClass.CREDIT_CARD: "card",
-        }[sensitivity]
-        length = 10
-        while True:
-            token = encoded[:length]
-            alias = f"{prefix}_{token}"
-            if sensitivity == SensitivityClass.EMAIL:
-                alias += "@example.invalid"
-            if alias not in reverse or reverse[alias] == digest_hex:
-                break
-            length += 2
-        registry[digest_hex] = alias
-        self.secrets_store.save_registry(snapshot_id, registry)
-        return alias
 
 
 _SQL_SECRET_PATTERNS = (
@@ -206,3 +220,40 @@ def scan_and_redact_sql_literals(sql: str) -> tuple[str, int]:
             cleaned, replaced = pattern.subn("[REDACTED]", cleaned)
         count += replaced
     return cleaned, count
+
+
+_STRING_LITERAL = re.compile(r"N?'(?:[^']|'')*'")
+_PII_LITERAL_PATTERNS = (
+    (EMAIL, "EMAIL"),
+    (CARD, "CREDIT_CARD"),
+    (THAI_ID, "NATIONAL_ID"),
+    (PHONE, "PHONE"),
+    (THAI_TITLED_NAME, "PERSONAL_NAME"),
+    (LATIN_TITLED_NAME, "PERSONAL_NAME"),
+)
+
+
+def scan_and_redact_pii_literals(sql: str) -> tuple[str, int]:
+    """Replace personal data inside SQL string literals with visible `[REDACTED:<CLASS>]` marks.
+
+    Routine bodies get marks rather than fakes: a fake value in code could be redeployed and
+    silently change behaviour, while a mark is obviously not a real value.
+    """
+    count = 0
+
+    def scrub(literal: re.Match[str]) -> str:
+        nonlocal count
+        text, replaced = redact_pii_text(literal.group(0))
+        count += replaced
+        return text
+
+    return _STRING_LITERAL.sub(scrub, sql), count
+
+
+def redact_pii_text(text: str) -> tuple[str, int]:
+    """Replace personal data anywhere in prose (e.g. a table description) with marks."""
+    count = 0
+    for pattern, label in _PII_LITERAL_PATTERNS:
+        text, replaced = pattern.subn(f"[REDACTED:{label}]", text)
+        count += replaced
+    return text, count

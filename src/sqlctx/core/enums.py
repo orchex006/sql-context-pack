@@ -64,6 +64,7 @@ class SensitivityClass(StrEnum):
     PRECISE_LOCATION = "precise_location"
     BIOMETRIC = "biometric"
     UNKNOWN_SENSITIVE = "unknown_sensitive"
+    FREE_TEXT = "free_text"
 
 
 class ClassificationStatus(StrEnum):

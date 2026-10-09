@@ -5,7 +5,7 @@ SQL Context Pack turns a live database into AI-ready SQL context: the DDL and me
 table data, organised into context folders — with anything it cannot confidently classify kept
 in `unknowns/` rather than guessed.
 
-Version `2.1.0` · Python `>=3.11` · Output format `2`
+Version `3.0.0` · Python `>=3.11` · Output format `2`
 
 ## What it does
 
@@ -44,6 +44,18 @@ Version `2.1.0` · Python `>=3.11` · Output format `2`
 3. [Usage Examples](docs/usage-examples.md) — three worked flows, simple to advanced.
 
 The full [documentation map](docs/README.md) lists everything else.
+
+## Version 3.0.0
+
+Sensitive data never reaches an AI model. Every value is classified and protected in the
+service before it is returned or exported: names, Thai IDs, phone, card and account numbers
+become marked fakes, emails and usernames aliases, address/birth date/location are
+generalized, and secrets are redacted. Protected columns cannot be used in filters or
+functions to infer values, and when real values are needed the AI hands the user a query to
+run themselves (`sqlctx query --reveal`, interactive terminal only).
+
+It is a major version because Query Data output changes meaning and some queries 2.1.0
+accepted are now rejected. Read the [release and migration notes](docs/releases/3.0.0.md).
 
 ## Version 2.1.0
 

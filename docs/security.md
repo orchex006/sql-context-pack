@@ -1,7 +1,7 @@
 # Security
 
 The product's guarantee is narrow and worth stating plainly: an agent can read your database
-structure and a bounded, masked sample of its data, and can write only to two explicitly enabled
+structure and a bounded, protected sample of its data, and can write only to two explicitly enabled
 surfaces. It never receives your credentials.
 
 ## Credentials and network
@@ -21,7 +21,7 @@ surfaces. It never receives your credentials.
   exclusion patterns.
 - Query Data accepts relational SELECT only, validated by parsing rather than pattern matching.
   See [Query Data validation](#query-data-validation).
-- Table capture is DDL, metadata and a bounded masked sample — never every row.
+- Table capture is DDL, metadata and a bounded protected, marked sample — never every row.
 - A secret scanner redacts SQL literals before export. An object with a residual secret is
   skipped and counted in `skipped_security` rather than exported.
 
@@ -49,6 +49,30 @@ where lineage cannot be resolved, the value is redacted.
 
 On SQL Server the profile must additionally prove it holds no write or admin permission before a
 query runs.
+
+## Sensitive data never reaches the model
+
+Every value is protected inside the service before it is returned or exported, so a model —
+and anything its provider retains or trains on — never receives real personal or secret data.
+
+- **Classification** uses SQL Server `sys.sensitivity_classifications`, then built-in name
+  rules (including Thai/AgriMap abbreviations such as `fname`, `lname`, `tel`, `addr`, `pid`,
+  `id_card`, `dob`, `pwd`, `lat`), then value shapes (email, Thai ID, phone, card, titled
+  names). Every string is also scanned for embedded personal data.
+- **Treatment:** names, Thai IDs, phone, card and account numbers become tool-generated fakes
+  in the original layout (fake identifiers start with `0`, so they are never real); emails
+  and usernames become aliases; address, birth date and location are generalized; secrets and
+  unknown lineage are redacted.
+- **Marking:** every protected column is marked in the result header and metadata, e.g.
+  `FIRST_NAME ⟨FAKE:PERSONAL_NAME⟩`.
+- **Inference guard:** a protected column may only be selected directly; filters, joins,
+  grouping, ordering, `CASE` and functions on it are rejected with
+  `QUERY_SENSITIVE_USAGE_RESTRICTED`.
+- **Reveal handoff:** when real values are needed the model returns the SQL and steps for the
+  user to run themselves. `sqlctx query --reveal` prints real values only to an interactive
+  terminal after typed confirmation and is not reachable through MCP or HTTP.
+
+Limits are stated in the [3.0.0 release notes](releases/3.0.0.md#known-limits).
 
 ## No guessing
 

@@ -414,11 +414,13 @@ class SamplePage(PublicModel):
     all_rows: bool = False
     complete: bool = True
     page_count: int = Field(default=1, ge=0)
+    # Visible protection marker per protected column, e.g. "⟨FAKE:PERSONAL_NAME⟩".
+    column_markers: dict[str, str] = Field(default_factory=dict)
 
 
 class MaskingDecision(PublicModel):
     sensitivity: SensitivityClass
-    action: Literal["keep", "redact", "alias", "generalize"]
+    action: Literal["keep", "redact", "alias", "generalize", "fake", "scan"]
     masked_value: Any
     rule: str
 

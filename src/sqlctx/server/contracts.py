@@ -37,10 +37,32 @@ class QueryDataRequest(StrictModel):
     value_mode: ValueMode = "short"
 
 
+ProtectionTreatment = Literal["public", "fake", "alias", "generalize", "redact", "scan"]
+
+
 class QueryResultColumn(PublicModel):
     name: str
     display_name: str
     data_type: str = ""
+    sensitivity: str = "public"
+    treatment: ProtectionTreatment = "public"
+    # Visible marker also shown in the Markdown header; empty for a public column.
+    marker: str = ""
+
+
+class RevealHandoff(PublicModel):
+    """How the user can see real values themselves; the model never receives them."""
+
+    reason: Literal["protected_columns", "restricted_usage"]
+    columns: list[str]
+    model_may_view: Literal[False] = False
+    instruction: str = (
+        "Do not try to obtain these values. Give the user the steps below; they run the "
+        "query themselves, outside the AI session, and the values stay with them."
+    )
+    profile: str
+    sql: str
+    user_steps: list[str]
 
 
 class QueryDataResult(PublicModel):
@@ -52,6 +74,9 @@ class QueryDataResult(PublicModel):
     masked: Literal[True] = True
     value_mode: ValueMode = "short"
     markdown: str
+    # Count of values protected in this result, by treatment (fake, alias, ...).
+    protected_value_counts: dict[str, int] = Field(default_factory=dict)
+    reveal_handoff: RevealHandoff | None = None
 
 
 class HealthResponse(PublicModel):

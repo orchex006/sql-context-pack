@@ -185,7 +185,8 @@ sqlctx doctor update --host <codex|claude|gemini|agy> [--version <x.y.z>] [--sou
 8. Record a `CHANGELOG.md` entry when a requirement version's work is finished. The changelog
    does not replace the requirement history, and the requirement history does not replace it.
 
-The current baseline is [v1.0](docs/spec/design-spec-v1.0.md). Versions after it track product
+The current baseline is [v1.0](docs/spec/design-spec-v1.0.md); the latest version is
+[v1.1](docs/spec/design-spec-v1.1.md). Versions after the baseline track product
 versions of 2.1.0 or higher. See [Requirements](docs/requirements.md).
 
 ---

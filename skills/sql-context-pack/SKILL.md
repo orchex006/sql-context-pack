@@ -2,7 +2,7 @@
 name: sql-context-pack
 description: Build complete sanitized TABLE/PROCEDURE/FUNCTION context, classify owner-registered SQL folders, query DB_METADATA_CONTEXT, and plan approval-gated SQL Server routine updates through the managed sqlctx service without exposing credentials or guessing context.
 metadata:
-  version: "2.1.0"
+  version: "3.0.0"
 ---
 
 # SQL Context Pack
@@ -29,7 +29,8 @@ unmasked data, owner approval credentials, or unrestricted SQL execution.
   All syncs need a numeric actor ID, profile write scope and an idempotency key.
 - generation: call `sqlctx_plan_context_generation`; treat drift as a stop, not a warning.
 - routine update: plan one registered relative file or the whole folder, then approval-gated apply.
-- `query`: use `sqlctx_query_data`; relational SELECT only, masked output, max 500 rows over MCP.
+- `query`: use `sqlctx_query_data`; relational SELECT only, protected output, max 500 rows over
+  MCP. Follow [Sensitive data](#sensitive-data) for every result.
 - `format`, profile configuration/removal/write-scope, folder registration, approvals, fetch/assemble,
   lifecycle and uninstall are owner CLI operations; give the exact command instead of emulating them.
 
@@ -47,9 +48,29 @@ Unresolved classification does not block all-mode export. Materialize it under
 must have the v2 header. SQL Server procedures must retain exact `CREATE OR ALTER PROCEDURE` after
 the header.
 
-TABLE capture is DDL/metadata plus bounded masked samples, never every table row. Do not claim a
+TABLE capture is DDL/metadata plus bounded protected, marked samples, never every table row. Do not claim a
 failed extraction was captured; report discovered, analyzed, failed, materialized, excluded,
 security-skipped, and unresolved counts separately.
+
+## Sensitive data
+
+The service protects personal and secret values in code before any result reaches you. You
+never see real sensitive values, and you must never try to.
+
+1. Every protected column is marked in the result header and in `columns[].marker`:
+   `⟨FAKE:…⟩` (names, Thai ID, phone, account: realistic but fake), `⟨ALIAS:…⟩` (email,
+   username), `⟨GENERALIZED:…⟩` (address, birth year, coarse location), `⟨REDACTED:…⟩`
+   (secrets, unknown lineage) and `⟨SCANNED…⟩` (free text with embedded PII replaced).
+2. Whenever you quote a marked value, say it is fake, aliased, generalized or redacted. Never
+   present a fake as a real person, ID or number.
+3. Protected columns may only be selected directly. Filtering, joining, grouping, ordering,
+   CASE or functions on them return `QUERY_SENSITIVE_USAGE_RESTRICTED`; do not rewrite the
+   query to get around it.
+4. When the user needs real values, or a result or error carries `reveal_handoff`, give the
+   user its `sql` and `user_steps` verbatim so they run it themselves, outside this session.
+   Never run `sqlctx query --reveal` yourself; it refuses non-interactive terminals by design.
+5. Export samples, routine-body string literals and table descriptions are protected the same
+   way; `[REDACTED:<CLASS>]` in exported SQL marks a removed literal, not a real value.
 
 ## Registered folder and index workflow
 

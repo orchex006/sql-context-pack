@@ -8,9 +8,10 @@ from typing import Any
 
 from sqlctx.adapters.base import AdapterQueries, BaseDatabaseAdapter
 from sqlctx.context_index.contracts import ContextIndexEntry, ContextIndexListRequest
-from sqlctx.core.enums import DatabaseEngine, ObjectType
+from sqlctx.core.enums import DatabaseEngine, ObjectType, SensitivityClass
 from sqlctx.core.errors import SqlCtxError
 from sqlctx.core.models import ObjectRef, ResolvedConnectionProfile
+from sqlctx.security.sensitivity import classify_database_label
 
 _PROCEDURE_DECLARATION = re.compile(
     r"(?:CREATE\s+OR\s+ALTER|CREATE|ALTER)\s+(?:PROCEDURE|PROC)\b",
@@ -857,6 +858,40 @@ class SqlServerAdapter(BaseDatabaseAdapter):
                 "ROUTINE_OBJECT_TYPE_REQUIRED", "Only procedures/functions can apply."
             )
         self._execute_write(profile, normalized)
+
+    def sensitivity_classifications(
+        self, profile: ResolvedConnectionProfile, tables: tuple[ObjectRef, ...]
+    ) -> dict[str, SensitivityClass]:
+        """Read `sys.sensitivity_classifications` (SQL Server 2019+); most restrictive wins.
+
+        Missing catalog view or permission yields no classifications; the built-in name and
+        value rules still apply, so this only ever adds protection.
+        """
+        result: dict[str, SensitivityClass] = {}
+        for table in tables:
+            try:
+                rows = self._execute(
+                    profile,
+                    """
+                    SELECT c.name AS column_name,
+                           CAST(sc.information_type AS nvarchar(128)) AS information_type,
+                           CAST(sc.label AS nvarchar(128)) AS label
+                      FROM sys.sensitivity_classifications sc
+                      JOIN sys.columns c
+                        ON c.object_id = sc.major_id AND c.column_id = sc.minor_id
+                      JOIN sys.objects o ON o.object_id = sc.major_id
+                      JOIN sys.schemas s ON s.schema_id = o.schema_id
+                     WHERE s.name = ? AND o.name = ?
+                    """,
+                    self._parameters(table.schema_name, table.object_name),
+                )
+            except SqlCtxError:
+                return result
+            for row in rows:
+                sensitivity = classify_database_label(row.get("information_type"), row.get("label"))
+                if sensitivity != SensitivityClass.PUBLIC:
+                    result[str(row["column_name"])] = sensitivity
+        return result
 
     def assert_query_read_only(
         self, profile: ResolvedConnectionProfile, tables: tuple[ObjectRef, ...]

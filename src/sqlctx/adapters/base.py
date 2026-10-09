@@ -11,7 +11,13 @@ from fnmatch import fnmatchcase
 from threading import Lock
 from typing import Any, Protocol
 
-from sqlctx.core.enums import ConstraintType, DatabaseEngine, EdgeType, ObjectType
+from sqlctx.core.enums import (
+    ConstraintType,
+    DatabaseEngine,
+    EdgeType,
+    ObjectType,
+    SensitivityClass,
+)
 from sqlctx.core.errors import SqlCtxError
 from sqlctx.core.models import (
     ColumnMetadata,
@@ -134,6 +140,12 @@ class BaseDatabaseAdapter:
         self, profile: ResolvedConnectionProfile, tables: tuple[ObjectRef, ...]
     ) -> None:
         """Use transaction-level read-only setup for engines that enforce it."""
+
+    def sensitivity_classifications(
+        self, profile: ResolvedConnectionProfile, tables: tuple[ObjectRef, ...]
+    ) -> dict[str, SensitivityClass]:
+        """Column name -> class from the engine's native data classification, if it has one."""
+        return {}
 
     @contextmanager
     def open_query(

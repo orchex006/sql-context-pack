@@ -2336,7 +2336,7 @@
             "type": "string"
           },
           "version": {
-            "default": "2.1.0",
+            "default": "3.0.0",
             "title": "Version",
             "type": "string"
           }
@@ -2940,10 +2940,27 @@
             "title": "Profile",
             "type": "string"
           },
+          "protected_value_counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Protected Value Counts",
+            "type": "object"
+          },
           "returned_row_count": {
             "minimum": 0.0,
             "title": "Returned Row Count",
             "type": "integer"
+          },
+          "reveal_handoff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RevealHandoff"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "truncated": {
             "default": false,
@@ -2996,8 +3013,31 @@
             "title": "Display Name",
             "type": "string"
           },
+          "marker": {
+            "default": "",
+            "title": "Marker",
+            "type": "string"
+          },
           "name": {
             "title": "Name",
+            "type": "string"
+          },
+          "sensitivity": {
+            "default": "public",
+            "title": "Sensitivity",
+            "type": "string"
+          },
+          "treatment": {
+            "default": "public",
+            "enum": [
+              "public",
+              "fake",
+              "alias",
+              "generalize",
+              "redact",
+              "scan"
+            ],
+            "title": "Treatment",
             "type": "string"
           }
         },
@@ -3086,6 +3126,62 @@
           "category"
         ],
         "title": "ResolutionItem",
+        "type": "object"
+      },
+      "RevealHandoff": {
+        "additionalProperties": false,
+        "description": "How the user can see real values themselves; the model never receives them.",
+        "properties": {
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "instruction": {
+            "default": "Do not try to obtain these values. Give the user the steps below; they run the query themselves, outside the AI session, and the values stay with them.",
+            "title": "Instruction",
+            "type": "string"
+          },
+          "model_may_view": {
+            "const": false,
+            "default": false,
+            "title": "Model May View",
+            "type": "boolean"
+          },
+          "profile": {
+            "title": "Profile",
+            "type": "string"
+          },
+          "reason": {
+            "enum": [
+              "protected_columns",
+              "restricted_usage"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "sql": {
+            "title": "Sql",
+            "type": "string"
+          },
+          "user_steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "User Steps",
+            "type": "array"
+          }
+        },
+        "required": [
+          "reason",
+          "columns",
+          "profile",
+          "sql",
+          "user_steps"
+        ],
+        "title": "RevealHandoff",
         "type": "object"
       },
       "RoutineApplyItemResult": {
@@ -3622,7 +3718,7 @@
   },
   "info": {
     "title": "SQL Context Pack",
-    "version": "2.1.0"
+    "version": "3.0.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -5906,7 +6002,7 @@
             "body": {
               "service": "sql-context-pack",
               "status": "ok",
-              "version": "2.1.0"
+              "version": "3.0.0"
             },
             "status": "200"
           }

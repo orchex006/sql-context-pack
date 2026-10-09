@@ -16,7 +16,7 @@ import traceback
 import zipfile
 from collections.abc import Callable
 from pathlib import Path
-from typing import Annotated, Literal, cast
+from typing import Annotated, Any, Literal, cast
 
 import httpx
 import typer
@@ -681,7 +681,29 @@ def sync_data(
 
 @app.command("query")
 def query_data(
-    sql: Annotated[str, typer.Argument(help="One validated read-only SELECT query")],
+    sql: Annotated[str | None, typer.Argument(help="One validated read-only SELECT query")] = None,
+    sql_file: Annotated[
+        Path | None,
+        typer.Option(
+            "--sql-file",
+            exists=True,
+            dir_okay=False,
+            readable=True,
+            resolve_path=True,
+            help="Read the SELECT from a file instead of the argument",
+        ),
+    ] = None,
+    reveal: Annotated[
+        bool,
+        typer.Option(
+            "--reveal",
+            help=(
+                "Print real, unprotected values to this interactive terminal after you "
+                "confirm. Refused when stdin/stdout is not a terminal, so an AI agent "
+                "cannot capture the output."
+            ),
+        ),
+    ] = False,
     profile: Annotated[
         str | None,
         typer.Option("--profile", help="Exact ready profile; optional only when one is ready"),
@@ -702,7 +724,16 @@ def query_data(
         typer.Option("--value-mode", help="short (default) or full masked text"),
     ] = "short",
 ) -> None:
-    """Run one validated relational SELECT and print masked Markdown only."""
+    """Run one validated relational SELECT and print protected Markdown only."""
+    if (sql is None) == (sql_file is None):
+        raise SqlCtxError(
+            "QUERY_SQL_SOURCE_INVALID", "Give the SELECT either inline or with --sql-file."
+        )
+    if reveal:
+        _require_interactive_terminal()
+    if sql_file is not None:
+        sql = sql_file.read_text(encoding="utf-8")
+    sql = cast(str, sql)
     if all_rows and max_rows is not None:
         raise SqlCtxError(
             "QUERY_ROW_OPTIONS_CONFLICT", "Use either --max-rows or --all-rows, not both."
@@ -720,6 +751,9 @@ def query_data(
         max_rows=max_rows or 100,
         value_mode=cast(ValueMode, value_mode),
     )
+    if reveal:
+        _reveal_query(service, command)
+        return
     if all_rows:
         stream = service.stream_query(command)
         try:
@@ -762,6 +796,34 @@ def query_data(
             f"\n> **sqlctx:** Result truncated ({result.truncation_reason}); "
             f"returned {result.returned_row_count} rows."
         )
+
+
+def _require_interactive_terminal() -> None:
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        raise SqlCtxError(
+            "REVEAL_REQUIRES_INTERACTIVE_TERMINAL",
+            "--reveal prints real values only to an interactive terminal the owner is "
+            "watching. It is refused for piped, captured or agent-run commands.",
+            status_code=403,
+        )
+
+
+def _reveal_query(service: Any, command: Any) -> None:
+    """Owner-only unprotected output, gated on a real interactive terminal and confirmation."""
+    _require_interactive_terminal()
+    typer.echo(
+        "This prints REAL, unprotected values to this terminal. Do not paste them into an AI chat.",
+        err=True,
+    )
+    answer = typer.prompt(f"Type the profile name '{command.profile}' to continue", err=True)
+    if answer.strip() != command.profile:
+        raise SqlCtxError("REVEAL_NOT_CONFIRMED", "Reveal was not confirmed; nothing was run.")
+    JsonRuntimeStateStore().write_json(
+        f"audit/reveal/{secrets.token_urlsafe(12)}.json",
+        {"profile": command.profile, "operation": "cli_reveal", "values_logged": False},
+    )
+    for line in service.stream_query_revealed(command):
+        typer.echo(line)
 
 
 @app.command("format")

@@ -348,6 +348,15 @@ class ServiceFacade:
         adapter = create_adapter(profile.engine)
         return self.queries.stream_markdown(command, profile=profile, adapter=adapter)
 
+    def stream_query_revealed(self, command: QueryDataRequest) -> Any:
+        """Unprotected rows for the owner CLI `--reveal` path only; never wired to MCP/HTTP."""
+        profile = self.profiles.resolve(command.profile)
+        adapter = create_adapter(profile.engine)
+        from sqlctx.query_data.service import QueryDataService
+
+        service = QueryDataService(self._query_masker)
+        return service.stream_revealed(command, profile=profile, adapter=adapter)
+
     @property
     def queries(self) -> QueryService:
         """Construct the additive query subsystem only when the new feature is invoked."""

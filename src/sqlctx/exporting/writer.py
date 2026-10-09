@@ -38,7 +38,11 @@ from sqlctx.core.models import (
 from sqlctx.exporting.header import ManagedSqlHeader, parse_managed_sql, render_managed_sql
 from sqlctx.formatting.formatter import SqlFluffFormatter
 from sqlctx.indexing.builder import IndexBuilder, IndexBundle
-from sqlctx.security.masking import scan_and_redact_sql_literals
+from sqlctx.security.masking import (
+    redact_pii_text,
+    scan_and_redact_pii_literals,
+    scan_and_redact_sql_literals,
+)
 
 
 def sha256_bytes(value: bytes) -> str:
@@ -103,20 +107,25 @@ class OutputPackageWriter:
         if page is None:
             return None
         rows = [dict(zip(page.columns, row, strict=True)) for row in page.rows]
+        marked = [
+            f"{column} {page.column_markers[column]}" if column in page.column_markers else column
+            for column in page.columns
+        ]
         if sample_format == SampleOutputFormat.JSON:
             return "json", canonical_json(
                 {
                     "requested": page.requested_count,
                     "actual": page.actual_count,
                     "shortage_reason": page.shortage_reason,
+                    "column_markers": page.column_markers,
                     "rows": rows,
                 }
             )
         if sample_format == SampleOutputFormat.CSV:
             stream = io.StringIO(newline="")
-            writer = csv.DictWriter(stream, fieldnames=page.columns, lineterminator="\n")
-            writer.writeheader()
-            writer.writerows(rows)
+            writer = csv.writer(stream, lineterminator="\n")
+            writer.writerow(marked)
+            writer.writerows(page.rows)
             return "csv", stream.getvalue().encode()
         lines = [
             f"# Sample: {object_id}",
@@ -127,7 +136,7 @@ class OutputPackageWriter:
             "",
         ]
         if page.columns:
-            lines.append("| " + " | ".join(page.columns) + " |")
+            lines.append("| " + " | ".join(marked) + " |")
             lines.append("| " + " | ".join("---" for _ in page.columns) + " |")
             for row in page.rows:
                 values = [str(value).replace("|", "\\|").replace("\n", " ") for value in row]
@@ -176,6 +185,7 @@ class OutputPackageWriter:
         format_results: list[SqlFormatResult] = []
         skipped_objects: list[dict[str, Any]] = []
         redacted_secret_count = 0
+        redacted_pii_count = 0
         used_paths: dict[str, str] = {}
 
         for position, object_id in enumerate(object_ids, start=1):
@@ -200,6 +210,11 @@ class OutputPackageWriter:
             used_paths[relative] = object_id
             cleaned, secret_count = scan_and_redact_sql_literals(
                 obj.sanitized_definition or "-- definition unavailable\n"
+            )
+            cleaned, pii_count = scan_and_redact_pii_literals(cleaned)
+            redacted_pii_count += pii_count
+            description = (
+                redact_pii_text(obj.native_comment)[0] if obj.native_comment else obj.native_comment
             )
             _, residual_secret_count = scan_and_redact_sql_literals(cleaned)
             if residual_secret_count:
@@ -238,7 +253,7 @@ class OutputPackageWriter:
                 object_name=obj.ref.object_name,
                 object_type=obj.ref.object_type,
                 context=category,
-                description=obj.native_comment,
+                description=description,
                 tags=tags,
                 evidence=sorted(candidate_evidence),
                 classification_status="confirmed" if confirmed else "unresolved",
@@ -284,7 +299,7 @@ class OutputPackageWriter:
                             "object_id": object_id,
                             "schema": obj.ref.schema_name,
                             "table": obj.ref.object_name,
-                            "description": obj.native_comment,
+                            "description": description,
                             "columns": [item.model_dump(mode="json") for item in obj.columns],
                             "constraints": [
                                 item.model_dump(mode="json") for item in obj.constraints
@@ -382,6 +397,7 @@ class OutputPackageWriter:
                     "raw_credentials_exported": False,
                     "raw_secrets_detected_after_export": False,
                     "secret_literals_redacted": redacted_secret_count,
+                    "pii_literals_redacted": redacted_pii_count,
                     "objects_skipped_security": len(skipped_objects),
                 },
                 "sqlfluff-report.json": {
@@ -511,6 +527,7 @@ class OutputPackageWriter:
                 "raw_credentials_exported": False,
                 "raw_secrets_detected_after_export": False,
                 "secret_literals_redacted": redacted_secret_count,
+                "pii_literals_redacted": redacted_pii_count,
                 "objects_skipped_security": len(skipped_objects),
             },
             "sqlfluff": {

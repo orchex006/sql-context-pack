@@ -45,7 +45,11 @@ from sqlctx.core.models import (
     SitemapItem,
     SitemapPage,
 )
-from sqlctx.security.masking import DeterministicMaskingEngine, scan_and_redact_sql_literals
+from sqlctx.security.masking import (
+    DeterministicMaskingEngine,
+    scan_and_redact_pii_literals,
+    scan_and_redact_sql_literals,
+)
 from sqlctx.security.runtime import JsonRuntimeStateStore
 
 _FAILURE_MESSAGE_LIMIT = 200
@@ -422,6 +426,7 @@ class CatalogService:
                 )
                 if extracted.sanitized_definition:
                     cleaned, _ = scan_and_redact_sql_literals(extracted.sanitized_definition)
+                    cleaned, _ = scan_and_redact_pii_literals(cleaned)
                     extracted.sanitized_definition = cleaned
                     extracted.source_fingerprint = (
                         "sha256:" + hashlib.sha256(cleaned.encode()).hexdigest()
@@ -468,19 +473,9 @@ class CatalogService:
                             columns=extracted.columns,
                             constraints=extracted.constraints,
                         )
-                    sanitized_rows = []
-                    for row in raw_page.rows:
-                        sanitized_rows.append(
-                            [
-                                self.masker.mask(
-                                    column_name=column,
-                                    value=value,
-                                    snapshot_id=catalog_id,
-                                ).masked_value
-                                for column, value in zip(raw_page.columns, row, strict=True)
-                            ]
-                        )
-                    object_sample = raw_page.model_copy(update={"rows": sanitized_rows})
+                    object_sample = self._protect_sample(
+                        raw_page, catalog_id=catalog_id, profile=profile, adapter=adapter, ref=ref
+                    )
                     samples[ref.object_id] = object_sample
                 except SqlCtxError as exc:
                     sample_failures += 1
@@ -540,6 +535,26 @@ class CatalogService:
             },
         )
 
+    def _protect_sample(
+        self,
+        raw_page: SamplePage,
+        *,
+        catalog_id: str,
+        profile: ResolvedConnectionProfile,
+        adapter: Any,
+        ref: ObjectRef,
+    ) -> SamplePage:
+        """Protect sample rows before they are checkpointed, cached or exported."""
+        lookup = getattr(adapter, "sensitivity_classifications", None)
+        column_classes = lookup(profile, (ref,)) if callable(lookup) else {}
+        rows, markers = self.masker.protect_rows(
+            snapshot_id=catalog_id,
+            columns=list(raw_page.columns),
+            rows=[list(row) for row in raw_page.rows],
+            column_classes=column_classes,
+        )
+        return raw_page.model_copy(update={"rows": rows, "column_markers": markers})
+
     def refresh_lut_samples(self, catalog_id: str, object_ids: list[str]) -> list[str]:
         """Fetch every row for final LUT tables that were not recognized during phase one."""
         if not object_ids:
@@ -566,18 +581,9 @@ class CatalogService:
                     columns=obj.columns,
                     constraints=obj.constraints,
                 )
-                sanitized_rows = [
-                    [
-                        self.masker.mask(
-                            column_name=column,
-                            value=value,
-                            snapshot_id=catalog_id,
-                        ).masked_value
-                        for column, value in zip(raw_page.columns, row, strict=True)
-                    ]
-                    for row in raw_page.rows
-                ]
-                samples[object_id] = raw_page.model_copy(update={"rows": sanitized_rows})
+                samples[object_id] = self._protect_sample(
+                    raw_page, catalog_id=catalog_id, profile=profile, adapter=adapter, ref=obj.ref
+                )
             except SqlCtxError:
                 failed.append(object_id)
         self._write_snapshot(snapshot.model_copy(update={"samples": samples}))

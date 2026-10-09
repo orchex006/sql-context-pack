@@ -1,8 +1,14 @@
 # Requirements
 
-Current: [v1.0](spec/design-spec-v1.0.md) · [SHA-256](spec/design-spec-v1.0.sha256)
+Current: [v1.1](spec/design-spec-v1.1.md) · [SHA-256](spec/design-spec-v1.1.sha256)
+
+| Version | Product | Summary |
+| --- | --- | --- |
+| [v1.1](spec/design-spec-v1.1.md) | 3.0.0 | Sensitive data never reaches an AI model: fail-closed classification, tool-generated fakes, complete marking, inference guard, user-run reveal handoff |
+| [v1.0](spec/design-spec-v1.0.md) | 2.1.0 | Released baseline |
 
 v1.0 is the baseline requirement for product version 2.1.0, the first released version.
+v1.1 contains v1.0 in full, after its own revision section.
 
 ## Why the history resets here
 
@@ -31,8 +37,9 @@ remains recoverable from the repository history bundle taken before the reset.
 
 | Path | Contents |
 | --- | --- |
-| `docs/spec/design-spec-v1.0.md` | The authoritative specification |
+| `docs/spec/design-spec-v1.0.md` | The baseline specification |
 | `docs/spec/design-spec-v1.0.sha256` | Its integrity sidecar |
+| `docs/spec/design-spec-v1.1.md` / `.sha256` | v1.1, additive over v1.0, and its sidecar |
 | `prompts/sql_contxt_pack_design_spc_v1.0_start.md` | Byte-identical start prompt |
 | `prompts/requiremenr.raw.prompt.md` | Frozen original raw requirement |
 | `prompts/history/<yyyy-MM-dd>.txt` | Raw owner prompts, by date |
